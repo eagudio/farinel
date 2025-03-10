@@ -106,7 +106,7 @@ export class Farinel extends Matcher<any> {
     return this;
   }
 
-  watching(farinels: Farinel[]) {
+  subscribe(farinels: Farinel[]) {
     farinels.forEach((farinel: Farinel) => {
       farinel._observers.push(this);
 
@@ -149,59 +149,4 @@ export class Farinel extends Matcher<any> {
   }
 }
 
-const farinel = () => new Farinel();
-
-const MyButton = () => {
-  const myButton = farinel();
-
-  const handleClick = async () => {
-    await myButton.setState({...myButton.state, loading: true});
-
-    setTimeout(async () => await myButton.setState({counter: myButton.state.counter + 1, loading: false}), 3000);
-  }
-
-  return myButton
-    .stating((state: any) => ({
-      loading: false,
-      counter: 0,
-    }))
-    .when((state: any) => state.counter > 5, () => 
-      <button type="button" onClick={() => handleClick()}>counter is &gt; then 5!!</button>
-    )
-    .extracting((state: any) => ({
-      ...state,
-      text: state.loading ? "Loading..." : "Click me!",
-    }))
-    .otherwise(() => 
-      <button type="button" disabled={myButton.state.loading} onClick={() => handleClick()}>{myButton.state.text}</button>
-    );
-}
-
-const Container = () => {
-  const myButton = MyButton();
-
-  return farinel()
-    .stating((state: any) => ({
-      maxCount: 5,
-    }))
-    .watching([myButton])
-    .test((state: any) => myButton.state.counter === state.maxCount)
-    .with(5, () => (
-      <div>HELLO!!</div>
-    ))
-    .otherwise(() => 
-      <div onClick={() => console.log("container click")} onMouseOver={() => console.log("container over")}>
-        <input type="text" disabled={myButton.state.loading} value={myButton.state.counter} />
-        {myButton}
-      </div>
-    );
-}
-
-const App = async () => {
-  const farinel = new Farinel();
-
-  await farinel
-    .createRoot(document.body, Container());
-}
-
-App();
+export const farinel = () => new Farinel();
