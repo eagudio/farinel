@@ -4,7 +4,6 @@
     "@babel/preset-typescript"
   ],
   "plugins": [
-    "@babel/plugin-transform-runtime",
-    "./src/babel-plugin-jsx-to-farinel.js"
+    "@babel/plugin-transform-runtime"
   ]
 }

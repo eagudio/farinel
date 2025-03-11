@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  entry: './src/main.tsx', // Punto di ingresso del tuo codice
+  entry: './src/main.ts', // Punto di ingresso del tuo codice
   output: {
     filename: 'bundle.js', // Nome del file di output
     path: path.resolve(__dirname, 'dist'), // Cartella di destinazione
@@ -9,7 +9,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.[jt]sx?$/, // Rileva i file .ts
+        test: /\.[jt]s?$/, // Rileva i file .ts
         use: 'babel-loader', // Usa Babel per compilare TypeScript
         exclude: /node_modules/,
       },
