@@ -6,7 +6,8 @@
   "scripts": {
     "build:tsc": "tsc",
     "build": "babel dist --out-dir dist",
-    "rollup": "rollup -c"
+    "rollup": "rollup -c",
+    "dev": "vite --host"
   },
   "author": "",
   "license": "ISC",

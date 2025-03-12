@@ -1,7 +1,6 @@
 import { Matcher } from "ciaplu";
 
 export class Farinel extends Matcher<any> {
-  private _observers: Farinel[] = [];
   private _stating: (state: any) => any;
 
   constructor() {
@@ -38,62 +37,32 @@ export class Farinel extends Matcher<any> {
     this._context._matcher = (value1: any, value2: any) => Promise.resolve(value1 === value2)
 
     const newElement = await this;
+    
+    oldElement.replaceWith(newElement);
+  }
 
-    const isChildOfObserver = this._observers.some(observer => 
-      observer._context._returnValue?.contains(oldElement)
-    );
-
-    if (!isChildOfObserver) {
-      oldElement.replaceWith(newElement);
+  async createRoot(container: HTMLElement, farinel: Farinel) {
+    if (!container) {
+      throw new Error("Container element is required");
     }
 
-    this._observers.forEach(async (observer: Farinel) => {
-      const oldObserverElement = observer._context._returnValue;
-
-      observer._context._matched = false;
-      observer._context.value = undefined;
-      observer._context._returnValue = undefined;
-      observer._context._results = [];
-      observer._context._matcher = (value1: any, value2: any) => Promise.resolve(value1 === value2)
-
-      const newObserverElement = await observer;
-
-      if (oldObserverElement) {
-        oldObserverElement.replaceWith(newObserverElement);
-      }
-    });
-  }
-
-  async createRoot(domElement: HTMLElement, farinel: Farinel) {
     const element = await farinel;
-
-    domElement.appendChild(element);
-
-    return this;
-  }
-
-  watching(farinels: Farinel[]) {
-    farinels.forEach((farinel: Farinel) => {
-      farinel._observers.push(this);
-
-      this.extracting(async () => {
-        await farinel;
-
-        return this.state;
-      });
-    });
+    
+    if (element) {
+      container.appendChild(element);
+    }
 
     return this;
   }
 
-  test(matcher: (value1: any, value2: any) => Promise<boolean> | boolean) {
-    super.test(matcher);
+  first() {
+    super.first();
 
     return this;
   }
 
-  extracting(handler: (state: any) => Promise<any> | any) {
-    super.extracting(handler);
+  any() {
+    super.any();
 
     return this;
   }
@@ -104,14 +73,62 @@ export class Farinel extends Matcher<any> {
     return this;
   }
 
+  withType<U>(value: new (...args: any[]) => U, handler: () => Promise<any> | any) {
+    super.withType(value, handler);
+
+    return this;
+  }
+
   when(matcher: (value: any) => Promise<boolean> | boolean, handler: () => Promise<any> | any) {
     super.when(matcher, handler);
 
     return this;
   }
 
+  not() {
+    super.not();
+
+    return this;
+  }
+
+  yet() {
+    super.yet();
+
+    return this;
+  }
+  
+  extracting(handler: (state: any) => Promise<any> | any) {
+    super.extracting(handler);
+
+    return this;
+  }
+
+  test(matcher: (value1: any, value2: any) => Promise<boolean> | boolean) {
+    super.test(matcher);
+
+    return this;
+  }
+
   otherwise(handler: () => Promise<any> | any) {
     super.otherwise(handler);
+
+    return this;
+  }
+
+  one() {
+    super.one();
+
+    return this;
+  }
+
+  all() {
+    super.all();
+
+    return this;
+  }
+
+  return() {
+    super.return();
 
     return this;
   }
