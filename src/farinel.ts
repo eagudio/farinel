@@ -1,7 +1,6 @@
 import { Matcher } from "ciaplu";
 
 export class Farinel extends Matcher<any> {
-  private _element: HTMLElement | null = null;
   private _observers: Farinel[] = [];
   private _stating: (state: any) => any;
 
@@ -24,10 +23,12 @@ export class Farinel extends Matcher<any> {
   }
 
   async setState(newState: any) {
-    if (!this._element) {
+    if (!this._context._returnValue) {
       throw new Error("Element not found");
     }
 
+    const oldElement = this._context._returnValue;
+    
     this._stating = async(state: any) => Promise.resolve(newState);
 
     this._context._matched = false;
@@ -35,33 +36,38 @@ export class Farinel extends Matcher<any> {
     this._context._returnValue = undefined;
     this._context._results = [];
     this._context._matcher = (value1: any, value2: any) => Promise.resolve(value1 === value2)
+
     const newElement = await this;
 
-    this._element.replaceWith(newElement);
-    this._element = newElement;
+    const isChildOfObserver = this._observers.some(observer => 
+      observer._context._returnValue?.contains(oldElement)
+    );
 
-    // this._observers.forEach(async (observer: Farinel) => {
-    //   observer._context._matched = false;
-    //   observer._context.value = undefined;
-    //   observer._context._returnValue = undefined;
-    //   observer._context._results = [];
-    //   observer._context._matcher = (value1: any, value2: any) => Promise.resolve(value1 === value2)
+    if (!isChildOfObserver) {
+      oldElement.replaceWith(newElement);
+    }
 
-    //   const newObserverElement = await observer;
+    this._observers.forEach(async (observer: Farinel) => {
+      const oldObserverElement = observer._context._returnValue;
 
-    //   observer._element.replaceWith(newObserverElement);
-    //   observer._element = newObserverElement;
-    // });
+      observer._context._matched = false;
+      observer._context.value = undefined;
+      observer._context._returnValue = undefined;
+      observer._context._results = [];
+      observer._context._matcher = (value1: any, value2: any) => Promise.resolve(value1 === value2)
+
+      const newObserverElement = await observer;
+
+      if (oldObserverElement) {
+        oldObserverElement.replaceWith(newObserverElement);
+      }
+    });
   }
 
   async createRoot(domElement: HTMLElement, farinel: Farinel) {
-    this._element = domElement;
-
     const element = await farinel;
 
-    farinel._element = element;
-
-    this._element.appendChild(element);
+    domElement.appendChild(element);
 
     return this;
   }
@@ -70,8 +76,10 @@ export class Farinel extends Matcher<any> {
     farinels.forEach((farinel: Farinel) => {
       farinel._observers.push(this);
 
-      farinel.then(async (element: any) => {
-        farinel._element = element;
+      this.extracting(async () => {
+        await farinel;
+
+        return this.state;
       });
     });
 

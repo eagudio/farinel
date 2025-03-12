@@ -1,5 +1,3 @@
-import { Farinel } from "../farinel";
-
 export class Element extends HTMLElement {
   protected _element!: HTMLElement;
   private _type: string = "";
@@ -14,7 +12,7 @@ export class Element extends HTMLElement {
     this._children = children;
   }
   
-  connectedCallback() {
+  async connectedCallback() {
     if (this._type === "body") {
       this._element = document.body;
     } else {
@@ -35,7 +33,7 @@ export class Element extends HTMLElement {
       });
     }
     
-    this._appends(this._children);
+    await this._appends(this._children);
   }
 
   on(event: string, handler: () => void) {
@@ -45,19 +43,26 @@ export class Element extends HTMLElement {
   }
 
   private _appends(children: any[]) {
-    children.forEach(async c => {
-      if (typeof c === "string") {
-        this._element.appendChild(document.createTextNode(c));
-      } else if (c instanceof Promise) {
-        const resolvedChild = await c;
-        this._element.appendChild(resolvedChild);
-      } else if (c instanceof Node) {
-        this._element.appendChild(c);
-      } else if (Array.isArray(c)) {
-        this._appends(c);
-      } else {
-        console.warn("Unrecognized element:", c);
-      }
-    });
+    Promise.all(children.map(async c => await this._appendChildren(c)));
+  }
+
+  private async _appendChildren(c: any) {
+    if (typeof c === "string") {
+      this._element.appendChild(document.createTextNode(c));
+    } else if (typeof c === "function") {
+      const result = c();
+
+      await this._appendChildren(result);
+    } else if (c instanceof Promise) {
+      const resolvedChild = await c;
+      
+      this._element.appendChild(resolvedChild);
+    } else if (c instanceof Node) {
+      this._element.appendChild(c);
+    } else if (Array.isArray(c)) {
+      await this._appends(c);
+    } else {
+      console.warn("Unrecognized element:", c);
+    }
   }
 }
