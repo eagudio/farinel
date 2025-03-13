@@ -1,8 +1,8 @@
 import { Element } from "./element";
 
 class InputElement extends Element {
-  constructor(attributes: any) {
-    super("input", attributes);
+  constructor(attributes: any, ...children: any[]) {
+    super("input", attributes, ...children);
   }
 
   get value(): string {
@@ -18,4 +18,4 @@ class InputElement extends Element {
 
 customElements.define('f-input', InputElement);
 
-export const Input = (attributes: any) => new InputElement(attributes);
+export const Input = (attributes: any, ...children: any[]) => new InputElement(attributes, ...children);
