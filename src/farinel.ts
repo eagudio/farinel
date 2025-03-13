@@ -1,5 +1,4 @@
-import { Matcher } from "ciaplu";
-import { Context } from "ciaplu/lib/matcher/statements/context";
+import { Context, Matcher } from "ciaplu";
 
 export class Farinel extends Matcher<any> {
   private _stating: (state: any) => any;

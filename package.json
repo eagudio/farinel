@@ -31,6 +31,6 @@
     "webpack-dev-server": "^5.2.0"
   },
   "dependencies": {
-    "ciaplu": "^2.4.0"
+    "ciaplu": "^2.4.1"
   }
 }
