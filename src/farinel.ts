@@ -1,4 +1,5 @@
 import { Matcher } from "ciaplu";
+import { Context } from "ciaplu/lib/matcher/statements/context";
 
 export class Farinel extends Matcher<any> {
   private _stating: (state: any) => any;
@@ -22,19 +23,15 @@ export class Farinel extends Matcher<any> {
   }
 
   async setState(newState: any) {
-    if (!this._context._returnValue) {
+    if (!this._context.returnValue) {
       throw new Error("Element not found");
     }
 
-    const oldElement = this._context._returnValue;
+    const oldElement = this._context.returnValue;
     
     this._stating = async(state: any) => Promise.resolve(newState);
 
-    this._context._matched = false;
-    this._context.value = undefined;
-    this._context._returnValue = undefined;
-    this._context._results = [];
-    this._context._matcher = (value1: any, value2: any) => Promise.resolve(value1 === value2)
+    this._context = new Context(newState);
 
     const newElement = await this;
     
