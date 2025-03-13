@@ -129,5 +129,3 @@ export class Farinel extends Matcher<any> {
     return this;
   }
 }
-
-export const farinel = () => new Farinel();

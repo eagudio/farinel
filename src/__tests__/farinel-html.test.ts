@@ -1,4 +1,4 @@
-import { farinel } from '../farinel';
+import { farinel } from '../main';
 import { Button } from '../html/button';
 import { Div } from '../html/div';
 import { Input } from '../html/input';
