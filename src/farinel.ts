@@ -13,10 +13,16 @@ export class Farinel extends Matcher<any> {
     return this._context.value;
   }
 
-  stating(getState: (state: any) => {}) {
-    this._stating = getState;
+  async createRoot(container: HTMLElement, farinel: Farinel) {
+    if (!container) {
+      throw new Error("Container element is required");
+    }
 
-    this.extracting(async () => await this._stating(this._context.value));
+    const element = await farinel;
+    
+    if (element) {
+      container.appendChild(element);
+    }
 
     return this;
   }
@@ -37,16 +43,10 @@ export class Farinel extends Matcher<any> {
     oldElement.replaceWith(newElement);
   }
 
-  async createRoot(container: HTMLElement, farinel: Farinel) {
-    if (!container) {
-      throw new Error("Container element is required");
-    }
+  stating(getState: (state: any) => {}) {
+    this._stating = getState;
 
-    const element = await farinel;
-    
-    if (element) {
-      container.appendChild(element);
-    }
+    this.extracting(async () => await this._stating(this._context.value));
 
     return this;
   }
