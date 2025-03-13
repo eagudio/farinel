@@ -1,9 +1,19 @@
 {
   "name": "farinel",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A clever and mischievous framework that makes your code dance with joy! As cunning as it is lightweight - because being smart doesn't mean being heavy!",
   "main": "lib/main.js",
   "types": "lib/main.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/main.d.ts",
+      "import": "./lib/main.js"
+    },
+    "./html": {
+      "types": "./lib/html/index.d.ts",
+      "import": "./lib/html/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
