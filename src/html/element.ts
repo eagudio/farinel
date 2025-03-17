@@ -1,3 +1,5 @@
+import { Farinel } from "../farinel";
+
 export class Element extends HTMLElement {
   protected _element!: HTMLElement;
   private _type: string = "";
@@ -60,13 +62,17 @@ export class Element extends HTMLElement {
       await this._appendChildren(result);
     } else if (c instanceof Promise) {
       const resolvedChild = await c;
-      this._element.appendChild(resolvedChild);
+
+      if (resolvedChild instanceof Farinel) {
+        await resolvedChild.createRoot(this._element, resolvedChild);
+      }
+      else {
+        this._element.appendChild(resolvedChild);
+      }
     } else if (c instanceof Node) {
       this._element.appendChild(c);
     } else if (Array.isArray(c)) {
       await this._appends(c);
-    } else {
-      console.warn("Unrecognized element:", c);
     }
   }
 }

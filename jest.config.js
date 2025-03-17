@@ -6,7 +6,7 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
   transform: {
-    '^.+\\.tsx?$': 'ts-jest',
+    '^.+\\.ts?$': 'ts-jest',
   },
   testMatch: [
     '**/__tests__/**/*.test.ts',
