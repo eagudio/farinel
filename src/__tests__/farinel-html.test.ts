@@ -4,7 +4,7 @@ import { Div } from '../html/div';
 import { Input } from '../html/input';
 import { Select } from '../html/select';
 import { Option } from '../html/option';
-
+import { P } from '../html/p';
 describe('Farinel with HTML elements', () => {
   let domContainer: HTMLElement;
   let farinelInstance: Farinel;
@@ -42,13 +42,6 @@ describe('Farinel with HTML elements', () => {
     });
 
     it('should update the DOM when state changes', async () => {
-      // let resolveStateUpdate: () => void;
-      // const stateUpdatePromise = new Promise<void>(resolve => {
-      //   resolveStateUpdate = resolve;
-      // });
-
-      const [click, clicked] = farinelInstance.spy();
-
       farinelInstance
         .stating(() => ({
           counter: 0,
@@ -62,25 +55,22 @@ describe('Farinel with HTML elements', () => {
                   ...farinelInstance.state,
                   counter: farinelInstance.state.counter + 1
                 });
-
-                clicked();
               })
           )
         );
 
       await farinel().createRoot(domContainer, farinelInstance);
       
-      // Check initial state
       expect(domContainer.innerHTML).toContain('counter: 0');
       
-      // Simulate button click and wait for update
       const button = domContainer.querySelector('button') as HTMLButtonElement;
+
+      const stateUpdated = farinelInstance.spy();
       
       button.click();
 
-      await click;
+      await stateUpdated;
       
-      // Verify counter has been incremented
       expect(domContainer.innerHTML).toContain('counter: 1');
     });
   });
@@ -107,7 +97,6 @@ describe('Farinel with HTML elements', () => {
       expect(select).toBeTruthy();
       expect(select?.children.length).toBe(3);
       
-      // Set value and verify it has been updated
       if (select) {
         select.setAttribute('value', '0');
         expect(select.getAttribute('value')).toBe('0');
@@ -119,6 +108,9 @@ describe('Farinel with HTML elements', () => {
         .stating(() => ({
           value: 0
         }))
+        .when(() =>farinelInstance.state.value === 2, () =>
+          P({}, `value: ${farinelInstance.state.value}`)
+        )
         .otherwise(() => 
           Select({
             value: farinelInstance.state.value
@@ -135,28 +127,32 @@ describe('Farinel with HTML elements', () => {
         );
 
       await farinel().createRoot(domContainer, farinelInstance);
+
+      let select = domContainer.querySelector('select') as HTMLSelectElement;
+      let selectedOption = select.querySelector(`option[value="1"]`) as HTMLOptionElement;
+
+      let stateUpdated = farinelInstance.spy();
+
+      select.value = '1';
+      selectedOption.selected = true;
+      selectedOption.dispatchEvent(new Event('change', { bubbles: true }));
+
+      await stateUpdated;
+
+      expect(domContainer.innerHTML).toContain('select');
       
-      const select = domContainer.querySelector('select');
-      // if (select) {
-      //   // Set initial value
-      //   select.setAttribute('value', '0');
-        
-      //   // Simulate selection change
-      //   select.setAttribute('value', '2');
-      //   select.dispatchEvent(new Event('change'));
-      //   await new Promise(resolve => setTimeout(resolve, 0));
-        
-      //   // Recreate element to verify updated state
-      //   const updatedElement = await farinelInstance;
-      //   domContainer.innerHTML = '';
-      //   domContainer.appendChild(updatedElement);
-        
-      //   const updatedSelect = domContainer.querySelector('select');
-      //   if (updatedSelect) {
-      //     updatedSelect.setAttribute('value', '2');
-      //     expect(updatedSelect.getAttribute('value')).toBe('2');
-      //   }
-      // }
+      select = domContainer.querySelector('select') as HTMLSelectElement;
+      selectedOption = select.querySelector(`option[value="2"]`) as HTMLOptionElement;
+
+      stateUpdated = farinelInstance.spy();
+
+      select.value = '2';
+      selectedOption.selected = true;
+      selectedOption.dispatchEvent(new Event('change', { bubbles: true }));
+
+      await stateUpdated;
+
+      expect(domContainer.innerHTML).toContain('value: 2');
     });
   });
 
@@ -199,20 +195,58 @@ describe('Farinel with HTML elements', () => {
 
       await farinel().createRoot(domContainer, farinelInstance);
       
-      const input = domContainer.querySelector('input');
-      // if (input) {
-      //   input.value = 'new value';
-      //   input.dispatchEvent(new Event('input'));
-      //   await new Promise(resolve => setTimeout(resolve, 0));
-        
-      //   // Recreate element to verify updated state
-      //   const updatedElement = await farinelInstance;
-      //   domContainer.innerHTML = '';
-      //   domContainer.appendChild(updatedElement);
-        
-      //   const updatedInput = domContainer.querySelector('input');
-      //   expect(updatedInput?.value).toBe('new value');
-      // }
+      const input = domContainer.querySelector('input') as HTMLInputElement;
+
+      const stateUpdated = farinelInstance.spy();
+      
+      input.value = 'new value';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      
+      await stateUpdated;
+
+      const updatedInput = domContainer.querySelector('input') as HTMLInputElement;
+      expect(updatedInput.value).toBe('new value');
+      expect(farinelInstance.state.value).toBe('new value');
     });
   });
+
+  // describe('Tree of farinel elements', () => {
+  //   it('should correctly render the tree of farinel elements', async () => {
+  //     const MyButton = () => farinel()
+  //       .stating(() => ({}))
+  //       .otherwise(() => 
+  //         Button({}, 'Login')
+  //           .on("click", async () => {
+  //             await farinelInstance.setState({
+  //               logged: true
+  //             });
+  //           })
+  //         );
+
+  //     farinelInstance
+  //       .stating(() => ({
+  //         logged: false
+  //       }))
+  //       .when(() => farinelInstance.state.logged, () =>
+  //         P({}, 'Logged in')
+  //       )
+  //       .otherwise(() => 
+  //         MyButton()
+  //       );
+
+  //     await farinel().createRoot(domContainer, farinelInstance);
+
+  //     const button = domContainer.querySelector('button') as HTMLButtonElement;
+  //     expect(button).toBeTruthy();
+  //     expect(button.textContent).toBe('Login');
+      
+  //     const stateUpdated = farinelInstance.spy();
+
+  //     button.click();
+
+  //     await stateUpdated;
+
+  //     expect(domContainer.innerHTML).toContain('Logged in');
+  //   });
+  // });
 }); 

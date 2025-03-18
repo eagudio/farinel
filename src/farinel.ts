@@ -4,6 +4,7 @@ import { FarinelMatcher } from "./fainelmatcher";
 export class Farinel {
   private _stating: (state: any) => any;
   private _matcher: FarinelMatcher;
+  private _inform: any = () => {};
 
   constructor() {
     this._stating = () => {};
@@ -22,7 +23,7 @@ export class Farinel {
     const element = await farinel.resolve();
     
     if (element instanceof Farinel) {
-      await element.createRoot(container, farinel);
+      await element.createRoot(container, element);
     }
     else {
       container.appendChild(element);
@@ -45,6 +46,8 @@ export class Farinel {
     const newElement = await this.resolve();
     
     oldElement.replaceWith(newElement);
+
+    this._inform();
   }
 
   async resolve() {
@@ -54,13 +57,9 @@ export class Farinel {
   }
 
   spy() {
-    let resolveStateUpdate: any;
-
-    const p = new Promise<void>(resolve => {
-      resolveStateUpdate = resolve;
+    return new Promise<void>(resolve => {
+      this._inform = resolve;
     });
-
-    return [p, resolveStateUpdate];
   }
 
   stating(getState: (state: any) => {}) {
