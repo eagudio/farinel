@@ -50,8 +50,10 @@ export class Element extends HTMLElement {
     return this;
   }
 
-  private _appends(children: any[]) {
-    return Promise.all(children.map(async c => await this._appendChildren(c)));
+  private async _appends(children: any[]) {
+    for (const child of children) {
+      await this._appendChildren(child);
+    }
   }
 
   private async _appendChildren(c: any) {
