@@ -60,8 +60,8 @@ export class Element extends HTMLElement {
     } else if (typeof c === "function") {
       const result = c();
       await this._appendChildren(result);
-    } else if (c instanceof Promise) {
-      const resolvedChild = await c;
+    } else if (c instanceof Farinel) {
+      const resolvedChild = await c.resolve();
 
       if (resolvedChild instanceof Farinel) {
         await resolvedChild.createRoot(this._element, resolvedChild);

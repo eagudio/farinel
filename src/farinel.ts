@@ -5,6 +5,7 @@ export class Farinel {
   private _stating: (state: any) => any;
   private _matcher: FarinelMatcher;
   private _inform: any = () => {};
+  private _farinelContainer: Farinel | null = null;
 
   constructor() {
     this._stating = () => {};
@@ -13,6 +14,14 @@ export class Farinel {
 
   get state() {
     return this._matcher.context.value;
+  }
+
+  get farinelContainer(): Farinel | null {
+    return this._farinelContainer;
+  }
+
+  set farinelContainer(farinel: Farinel) {
+    this._farinelContainer = farinel;
   }
 
   async createRoot(container: HTMLElement, farinel: Farinel) {
@@ -24,6 +33,9 @@ export class Farinel {
     
     if (element instanceof Farinel) {
       await element.createRoot(container, element);
+
+      farinel._matcher.context.returnValue = element._matcher.context.returnValue;
+      element.farinelContainer = farinel;
     }
     else {
       container.appendChild(element);
@@ -44,10 +56,20 @@ export class Farinel {
     this._matcher.context = new Context(newState);
 
     const newElement = await this.resolve();
-    
-    oldElement.replaceWith(newElement);
 
-    this._inform();
+    if (newElement instanceof Farinel) {
+      const element = await newElement.resolve();
+
+      oldElement.replaceWith(element);
+    } else {
+      oldElement.replaceWith(newElement);
+    }
+
+    if (this.farinelContainer) {
+      this.farinelContainer._matcher.context.returnValue = newElement;
+    }
+
+    this._inform(newElement);
   }
 
   async resolve() {
@@ -57,7 +79,7 @@ export class Farinel {
   }
 
   spy() {
-    return new Promise<void>(resolve => {
+    return new Promise<any>(resolve => {
       this._inform = resolve;
     });
   }

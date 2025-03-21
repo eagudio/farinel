@@ -210,43 +210,107 @@ describe('Farinel with HTML elements', () => {
     });
   });
 
-  // describe('Tree of farinel elements', () => {
-  //   it('should correctly render the tree of farinel elements', async () => {
-  //     const MyButton = () => farinel()
-  //       .stating(() => ({}))
-  //       .otherwise(() => 
-  //         Button({}, 'Login')
-  //           .on("click", async () => {
-  //             await farinelInstance.setState({
-  //               logged: true
-  //             });
-  //           })
-  //         );
+  describe('Tree of farinel elements', () => {
+    it('should update state on click', async () => {
+      const MyButton = () => farinel()
+        .stating(() => ({}))
+        .otherwise(() => 
+          Button({}, 'Login')
+            .on("click", async () => {
+              await farinelInstance.setState({
+                logged: true
+              });
+            })
+          );
 
-  //     farinelInstance
-  //       .stating(() => ({
-  //         logged: false
-  //       }))
-  //       .when(() => farinelInstance.state.logged, () =>
-  //         P({}, 'Logged in')
-  //       )
-  //       .otherwise(() => 
-  //         MyButton()
-  //       );
+      farinelInstance
+        .stating(() => ({
+          logged: false
+        }))
+        .when(() => farinelInstance.state.logged, () =>
+          P({}, 'Logged in')
+        )
+        .otherwise(() => 
+          MyButton()
+        );
 
-  //     await farinel().createRoot(domContainer, farinelInstance);
+      await farinel().createRoot(domContainer, farinelInstance);
 
-  //     const button = domContainer.querySelector('button') as HTMLButtonElement;
-  //     expect(button).toBeTruthy();
-  //     expect(button.textContent).toBe('Login');
+      const button = domContainer.querySelector('button') as HTMLButtonElement;
+      expect(button).toBeTruthy();
+      expect(button.textContent).toBe('Login');
       
-  //     const stateUpdated = farinelInstance.spy();
+      const stateUpdated = farinelInstance.spy();
 
-  //     button.click();
+      button.click();
 
-  //     await stateUpdated;
+      await stateUpdated;
 
-  //     expect(domContainer.innerHTML).toContain('Logged in');
-  //   });
-  // });
+      expect(domContainer.innerHTML).toContain('Logged in');
+    });
+
+    it('should correctly render the tree of farinel elements', async () => {
+      const MyButton = ({
+        text
+      }: {
+        text: string
+      }) => {
+        const button: Farinel = farinel()
+          .stating(() => ({
+            login: false,
+          }))
+          .when(() => button.state.login === true, () =>
+            Button({}, 'Waiting...')
+          )
+          .otherwise(() =>
+            Button({}, text)
+              .on("click", async () => {
+                const newButton = await button.setState({
+                  login: true
+                });
+
+                await farinelInstance.setState({
+                  logged: true
+                });
+              })
+            );
+
+        return button;
+      }
+
+      const loginButton = MyButton({ text: 'Login' });
+
+      farinelInstance
+        .stating(() => ({
+          logged: false,
+        }))
+        .when(() => farinelInstance.state.logged, () =>
+          MyButton({ text: 'Logout' })
+        )
+        .otherwise(() => 
+          loginButton
+        );
+
+      await farinel().createRoot(domContainer, farinelInstance);
+
+      let button = domContainer.querySelector('button') as HTMLButtonElement;
+      expect(button).toBeTruthy();
+      expect(button.textContent).toBe('Login');
+      
+      const loginButtonUpdateState = loginButton.spy();
+      const farinelInstanceUpdateState = farinelInstance.spy();
+
+      button.click();
+
+      const loginButtonStateUpdated: HTMLButtonElement = await loginButtonUpdateState;
+
+      expect(loginButtonStateUpdated.textContent).toBe('Waiting...');
+
+      await farinelInstanceUpdateState;
+
+      button = domContainer.querySelector('button') as HTMLButtonElement;
+      expect(button).toBeTruthy();
+      expect(button.textContent).toBe('Logout');
+    });
+  });
 }); 
