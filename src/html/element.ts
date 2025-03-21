@@ -1,3 +1,5 @@
+import { Farinel } from "../farinel";
+
 export class Element extends HTMLElement {
   protected _element!: HTMLElement;
   private _type: string = "";
@@ -12,7 +14,7 @@ export class Element extends HTMLElement {
     this._children = children;
   }
   
-  async connectedCallback() {
+  async draw() {
     if (!this._element) {
       if (this._type === "body") {
         this._element = document.body;
@@ -49,7 +51,7 @@ export class Element extends HTMLElement {
   }
 
   private _appends(children: any[]) {
-    Promise.all(children.map(async c => await this._appendChildren(c)));
+    return Promise.all(children.map(async c => await this._appendChildren(c)));
   }
 
   private async _appendChildren(c: any) {
@@ -57,16 +59,25 @@ export class Element extends HTMLElement {
       this._element.appendChild(document.createTextNode(c));
     } else if (typeof c === "function") {
       const result = c();
+      await result.draw();
       await this._appendChildren(result);
-    } else if (c instanceof Promise) {
-      const resolvedChild = await c;
-      this._element.appendChild(resolvedChild);
-    } else if (c instanceof Node) {
-      this._element.appendChild(c);
+    } else if (c instanceof Farinel) {
+      const resolvedChild = await c.resolve();
+
+      if (resolvedChild instanceof Farinel) {
+        await resolvedChild.createRoot(this._element, resolvedChild);
+      }
+      else {
+        await resolvedChild.draw();
+
+        this._element.appendChild(resolvedChild);
+      }
     } else if (Array.isArray(c)) {
       await this._appends(c);
-    } else {
-      console.warn("Unrecognized element:", c);
-    }
+    } else if (c instanceof Element) {
+      await c.draw();
+
+      this._element.appendChild(c);
+    } 
   }
 }

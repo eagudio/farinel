@@ -1,6 +1,6 @@
 {
   "name": "farinel",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A clever and mischievous framework that makes your code dance with joy! As cunning as it is lightweight - because being smart doesn't mean being heavy!",
   "main": "lib/main.js",
   "types": "lib/main.d.ts",
