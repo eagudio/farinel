@@ -38,6 +38,8 @@ export class Farinel {
       element.farinelContainer = farinel;
     }
     else {
+      await element.draw();
+
       container.appendChild(element);
     }
 
@@ -60,8 +62,12 @@ export class Farinel {
     if (newElement instanceof Farinel) {
       const element = await newElement.resolve();
 
+      await element.draw();
+
       oldElement.replaceWith(element);
     } else {
+      await newElement.draw();
+      
       oldElement.replaceWith(newElement);
     }
 
