@@ -38,9 +38,9 @@ export class Farinel {
       element.farinelContainer = farinel;
     }
     else {
-      await element.draw();
+      await element.render();
 
-      container.appendChild(element);
+      container.appendChild(element.html);
     }
 
     return this;
@@ -62,20 +62,20 @@ export class Farinel {
     if (newElement instanceof Farinel) {
       const element = await newElement.resolve();
 
-      await element.draw();
+      await element.render();
 
-      oldElement.replaceWith(element);
+      oldElement.replaceWith(element.html);
     } else {
-      await newElement.draw();
+      await newElement.render();
       
-      oldElement.replaceWith(newElement);
+      oldElement.html.replaceWith(newElement.html);
     }
 
     if (this.farinelContainer) {
-      this.farinelContainer._matcher.context.returnValue = newElement;
+      this.farinelContainer._matcher.context.returnValue = newElement.html;
     }
 
-    this._inform(newElement);
+    this._inform(newElement.html);
   }
 
   async resolve() {

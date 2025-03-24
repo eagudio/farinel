@@ -1,10 +1,6 @@
 import { Farinel, farinel } from '../main';
-import { Button } from '../html/button';
-import { Div } from '../html/div';
-import { Input } from '../html/input';
-import { Select } from '../html/select';
-import { Option } from '../html/option';
-import { P } from '../html/p';
+import { Div, Input, Select, Option, P, Button } from '../html';
+
 describe('Farinel with HTML elements', () => {
   let domContainer: HTMLElement;
   let farinelInstance: Farinel;
