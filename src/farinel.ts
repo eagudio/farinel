@@ -1,5 +1,6 @@
-import { Context, Matcher } from "ciaplu";
+import { Context } from "ciaplu";
 import { FarinelMatcher } from "./fainelmatcher";
+import { Element } from "./html/element";
 
 export class Farinel {
   private _stating: (state: any) => any;
@@ -35,6 +36,7 @@ export class Farinel {
       await element.createRoot(container, element);
 
       farinel._matcher.context.returnValue = element._matcher.context.returnValue;
+
       element.farinelContainer = farinel;
     }
     else {
@@ -59,21 +61,11 @@ export class Farinel {
 
     const newElement = await this.resolve();
 
-    if (newElement instanceof Farinel) {
-      const element = await newElement.resolve();
+    const htmlElement: HTMLElement = await this.renderHTMLElement(newElement);
 
-      await element.render();
+    oldElement.html.replaceWith(htmlElement);
 
-      oldElement.replaceWith(element.html);
-    } else {
-      await newElement.render();
-      
-      oldElement.html.replaceWith(newElement.html);
-    }
-
-    if (this.farinelContainer) {
-      this.farinelContainer._matcher.context.returnValue = newElement.html;
-    }
+    this.updateContainer(newElement);
 
     this._inform(newElement.html);
   }
@@ -174,5 +166,29 @@ export class Farinel {
     this._matcher.return();
 
     return this;
+  }
+
+  private updateContainer(returnValue: any) {
+    if (!this.farinelContainer) {
+      return;
+    }
+
+    this.farinelContainer._matcher.context.returnValue = returnValue;
+
+    this.farinelContainer.updateContainer(returnValue);
+  }
+
+  private async renderHTMLElement(element: any): Promise<HTMLElement> {
+    if (element instanceof Farinel) {
+      const result = await element.resolve();
+
+      return await this.renderHTMLElement(result);
+    } else if (element instanceof Element) {
+      await element.render();
+
+      return element.html;
+    } else {
+      throw new Error("Invalid element");
+    }
   }
 }
