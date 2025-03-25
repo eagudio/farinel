@@ -1,11 +1,11 @@
 # Farinel
 
-Farinel is a lightweight and reactive UI framework for creating user interfaces in JavaScript/TypeScript. It provides a declarative and functional approach to state management and component rendering.
+Farinel is a lightweight and reactive UI framework for creating user interfaces in JavaScript/TypeScript. It provides a declarative and functional approach to state management and component rendering, built on top of Ciaplu for pattern matching and state management.
 
 ## Features
 
-- 🎯 Reactive state management
-- 🎨 Native HTML components
+- 🎯 Reactive state management with Ciaplu integration
+- 🎨 Native HTML components with TypeScript support
 - 🔄 Automatic DOM updates
 - 🎭 Simplified event handling
 - 📦 Zero external dependencies
@@ -13,6 +13,8 @@ Farinel is a lightweight and reactive UI framework for creating user interfaces 
 - 🔄 State transformations with `.extracting()`
 - 🧪 State testing with `.test()`
 - 🎯 Multiple state handlers with `.with()`
+- 🔍 Pattern matching with Ciaplu's matchers
+- 🎭 Type-safe component creation
 
 ## Installation
 
@@ -20,221 +22,354 @@ Farinel is a lightweight and reactive UI framework for creating user interfaces 
 npm install farinel
 ```
 
-## Quick Guide
+## Quick Start
 
-### Creating an Instance
+### Basic Component
 
 ```typescript
 import { farinel } from 'farinel';
+import { Div, Button } from './html';
 
-const app = farinel();
-```
-
-### Basic Component Structure
-
-```typescript
-const MyComponent = () => {
-  const component = farinel();
-
-  return component
+const Counter = () => {
+  const component = farinel()
     .stating(() => ({
-      counter: 0,
-      loading: false
+      count: 0
     }))
     .otherwise(() => 
       Div({}, 
-        Div({}, `status: ${component.state.loading ? 'loading' : 'ready'}`),
-        Button({
-          disabled: component.state.loading,
-        }, "Click me!")
+        Button({}, `Count: ${component.state.count}`)
+          .on("click", async () => {
+            await component.dispatch({
+              count: component.state.count + 1
+            });
+          })
       )
     );
+
+  return component;
 }
 ```
 
-### Conditional Rendering
+## Core Concepts
+
+### State Management
+
+Farinel uses Ciaplu's pattern matching for state management. The state is managed through the `stating()` method:
+
+```typescript
+const component = farinel()
+  .stating(() => ({
+    user: null,
+    loading: false
+  }));
+```
+
+### State Updates (Dispatch)
+
+State updates are handled through the `dispatch()` method:
+
+```typescript
+await component.dispatch({
+  user: { id: 1, name: 'John' },
+  loading: true
+});
+```
+
+### Pattern Matching
+
+Farinel exports all Ciaplu's pattern matching functions:
 
 ```typescript
 component
-  .stating(() => ({
-    counter: 0
-  }))
-  .when((state) => state.counter > 3, () => 
-    Div({}, "Counter is greater than 3!")
+  .with({ type: 'success' }, () => 
+    Div({}, "Success!")
+  )
+  .withType(Error, () => 
+    Div({}, "Error occurred")
+  )
+  .when(state => state.count > 10, () => 
+    Div({}, "Count is high!")
   )
   .otherwise(() => 
-    Div({}, "Counter is less than or equal to 3")
+    Div({}, "Default view")
   );
 ```
 
 ### State Transformations
 
+Transform state before rendering:
+
 ```typescript
 component
   .stating(() => ({
-    loading: false,
-    counter: 0
+    firstName: 'John',
+    lastName: 'Doe'
   }))
-  .extracting((state) => ({
+  .extracting(state => ({
     ...state,
-    text: state.loading ? "Loading..." : "Click me!"
+    fullName: `${state.firstName} ${state.lastName}`
   }))
   .otherwise(() => 
-    Button({}, component.state.text)
+    Div({}, `Hello ${component.state.fullName}!`)
   );
 ```
 
-### Multiple State Handlers
+### Component Composition
+
+Components can be composed and nested:
 
 ```typescript
-component
-  .stating(() => ({
-    counter: 0
-  }))
-  .test((state, currentState) => state.counter === currentState)
-  .with(5, () => 
-    Div({}, "Counter is exactly 5!")
-  )
-  .otherwise(() => 
-    Div({}, `Counter is ${component.state.counter}`)
-  );
+const UserProfile = ({ user }) => {
+  const profile = farinel()
+    .stating(() => ({
+      user,
+      editing: false
+    }))
+    .otherwise(() => 
+      Div({}, 
+        UserHeader({ user: profile.state.user }),
+        UserDetails({ 
+          user: profile.state.user,
+          editing: profile.state.editing,
+          onEdit: () => profile.dispatch({ editing: true })
+        })
+      )
+    );
+
+  return profile;
+};
 ```
 
 ### Event Handling
 
+Events are handled with the `on()` method:
+
 ```typescript
-Button({}, "Increment")
-  .on("click", async () => {
-    await component.setState({
-      ...component.state,
-      counter: component.state.counter + 1
+Button({}, "Submit")
+  .on("click", async (e) => {
+    e.preventDefault();
+    await component.dispatch({
+      loading: true
     });
-  })
+    // ... handle submission
+  });
 ```
 
 ### Form Components
 
-```typescript
-// Input with state
-Input({
-  type: 'text',
-  value: component.state.value,
-  disabled: component.state.loading
-})
-  .on("input", async (e) => {
-    await component.setState({
-      value: e.target.value
-    });
-  });
+Farinel provides form components with state management:
 
-// Select with options
-Select({
-  value: component.state.value
-}, 
-  [0, 1, 2].map(i => Option({
-    value: i
-  }, `Option ${i}`))
-)
-  .on("change", async (e) => {
-    await component.setState({
-      value: Number(e.target.value)
-    });
-  });
+```typescript
+const LoginForm = () => {
+  const form = farinel()
+    .stating(() => ({
+      email: '',
+      password: '',
+      loading: false
+    }))
+    .otherwise(() => 
+      Form({}, 
+        Input({
+          type: 'email',
+          value: form.state.email,
+          disabled: form.state.loading
+        })
+          .on("input", async (e) => {
+            await form.dispatch({
+              email: e.target.value
+            });
+          }),
+        Input({
+          type: 'password',
+          value: form.state.password,
+          disabled: form.state.loading
+        })
+          .on("input", async (e) => {
+            await form.dispatch({
+              password: e.target.value
+            });
+          }),
+        Button({
+          disabled: form.state.loading
+        }, "Login")
+          .on("click", async () => {
+            await form.dispatch({ loading: true });
+            // ... handle login
+          })
+      )
+    );
+
+  return form;
+};
+```
+
+### Root Creation
+
+Create a root component and mount it to the DOM:
+
+```typescript
+const app = farinel();
+await app.createRoot(document.body, App);
+```
+
+### State Observation
+
+Observe state changes with the `spy()` method:
+
+```typescript
+const stateChange = component.spy();
+await component.dispatch({ count: 1 });
+const newState = await stateChange;
 ```
 
 ## Complete Example
 
 ```typescript
 import { farinel } from 'farinel';
-import { Div, Button, Input, Select, Option } from './html';
+import { Div, Button, Input, Form } from './html';
 
-const CounterButton = ({ counter, loading, onButtonClick }) => {
-  const button = farinel();
-
-  const handleClick = async () => {
-    await button.setState({...button.state, loading: true});
-    onButtonClick({...button.state, loading: true});
-
-    setTimeout(async () => {
-      await button.setState({
-        counter: button.state.counter + 1, 
-        loading: false
-      });
-      onButtonClick({
-        counter: button.state.counter, 
-        loading: button.state.loading
-      });
-    }, 1000);
-  }
-
-  return button
+const LoginPage = () => {
+  const loginPage = farinel()
     .stating(() => ({
-      loading,
-      counter,
+      email: '',
+      password: '',
+      loading: false,
+      error: null
     }))
-    .when((state) => state.counter > 3, () => 
-      Button({
-        disabled: button.state.loading,
-      }, "Counter is > 3!")
-        .on("click", handleClick)
+    .when(state => state.error, () => 
+      Div({}, 
+        Form({}, 
+          Div({}, `Error: ${loginPage.state.error}`),
+          Input({
+            type: 'email',
+            value: loginPage.state.email,
+            disabled: loginPage.state.loading
+          })
+            .on("input", async (e) => {
+              await loginPage.dispatch({
+                email: e.target.value,
+                error: null
+              });
+            }),
+          Input({
+            type: 'password',
+            value: loginPage.state.password,
+            disabled: loginPage.state.loading
+          })
+            .on("input", async (e) => {
+              await loginPage.dispatch({
+                password: e.target.value,
+                error: null
+              });
+            }),
+          Button({
+            disabled: loginPage.state.loading
+          }, "Login")
+            .on("click", async () => {
+              await loginPage.dispatch({ loading: true });
+              try {
+                // ... handle login
+                await loginPage.dispatch({ 
+                  loading: false,
+                  error: null
+                });
+              } catch (error) {
+                await loginPage.dispatch({ 
+                  loading: false,
+                  error: error.message
+                });
+              }
+            })
+        )
+      )
     )
-    .extracting((state) => ({
-      ...state,
-      text: state.loading ? "Loading..." : "Click me!",
-    }))
-    .otherwise(() =>
-      Button({
-        disabled: button.state.loading,
-      }, button.state.text)
-        .on("click", handleClick)
+    .otherwise(() => 
+      Div({}, 
+        Form({}, 
+          Input({
+            type: 'email',
+            value: loginPage.state.email,
+            disabled: loginPage.state.loading
+          })
+            .on("input", async (e) => {
+              await loginPage.dispatch({
+                email: e.target.value,
+                error: null
+              });
+            }),
+          Input({
+            type: 'password',
+            value: loginPage.state.password,
+            disabled: loginPage.state.loading
+          })
+            .on("input", async (e) => {
+              await loginPage.dispatch({
+                password: e.target.value,
+                error: null
+              });
+            }),
+          Button({
+            disabled: loginPage.state.loading
+          }, "Login")
+            .on("click", async () => {
+              await loginPage.dispatch({ loading: true });
+              try {
+                // ... handle login
+                await loginPage.dispatch({ 
+                  loading: false,
+                  error: null
+                });
+              } catch (error) {
+                await loginPage.dispatch({ 
+                  loading: false,
+                  error: error.message
+                });
+              }
+            })
+        )
+      )
     );
-}
+
+  return loginPage;
+};
 
 const App = async () => {
   const app = farinel();
-  
-  await app.createRoot(document.body, () => {
-    const container = farinel();
-    
-    return container
-      .stating(() => ({
-        counter: 0,
-        loading: false,
-      }))
-      .otherwise(() => 
-        Div({}, 
-          Div({}, `Status: ${container.state.loading ? 'loading' : 'ready'}`),
-          CounterButton({
-            counter: container.state.counter,
-            loading: container.state.loading,
-            onButtonClick: ({counter, loading}) => {
-              container.setState({ counter, loading });
-            },
-          }),
-          Input({
-            type: "text",
-            disabled: container.state.loading,
-            value: container.state.counter,
-          }),
-          Select({
-            value: container.state.counter,
-          }, 
-            [0, 1, 2, 3, 4].map(i => Option({
-              value: i,
-            }, `Option ${i}`))
-          )
-            .on("change", async (e) => {
-              await container.setState({
-                counter: Number(e.target.value)
-              });
-            })
-        )
-      );
-  });
-}
+  await app.createRoot(document.body, LoginPage);
+};
 
 App();
 ```
+
+## API Reference
+
+### Core Methods
+
+- `stating(getState)`: Initialize component state
+- `dispatch(newState)`: Update component state
+- `createRoot(container, component)`: Mount component to DOM
+- `spy()`: Observe state changes
+- `resolve()`: Resolve component to final element
+
+### Pattern Matching Methods (from Ciaplu)
+
+- `with(value, handler)`: Match exact value
+- `withType(type, handler)`: Match by type
+- `when(matcher, handler)`: Match by condition
+- `otherwise(handler)`: Default handler
+- `extracting(handler)`: Transform state
+- `test(matcher)`: Test state condition
+
+### HTML Components
+
+- `Div(attributes, children)`
+- `Button(attributes, children)`
+- `Input(attributes)`
+- `Form(attributes, children)`
+- `Select(attributes, children)`
+- `Option(attributes, children)`
+
+and more...
 
 ## License
 
