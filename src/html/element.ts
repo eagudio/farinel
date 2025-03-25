@@ -1,28 +1,29 @@
 import { Farinel } from "../farinel";
 
-export class Element extends HTMLElement {
+export class Element {
   protected _element!: HTMLElement;
   private _type: string = "";
   private _attributes: any;
   protected _children: any[] = [];
+  private _events: any[] = [];
 
   constructor(type: string, attributes: any, ...children: any[]) {
-    super();
-
     this._type = type;
     this._attributes = attributes;
     this._children = children;
   }
+
+  get html() {
+    return this._element;
+  }
   
-  async draw() {
+  async render() {
     if (!this._element) {
       if (this._type === "body") {
         this._element = document.body;
       } else {
         this._element = document.createElement(this._type) as HTMLInputElement;
       }
-
-      this.appendChild(this._element);
       
       if (this._attributes) {
         Object.entries(this._attributes).forEach(([key, value]: [string, any]) => {
@@ -41,11 +42,15 @@ export class Element extends HTMLElement {
       }
       
       await this._appends(this._children);
+
+      this._events.forEach(({ event, handler }) => {
+        this._element.addEventListener(event, handler);
+      });
     }
   }
 
   on(event: string, handler: (e: any) => void) {
-    this.addEventListener(event, (e: any) => handler(e));
+    this._events.push({ event, handler });
     
     return this;
   }
@@ -61,7 +66,7 @@ export class Element extends HTMLElement {
       this._element.appendChild(document.createTextNode(c));
     } else if (typeof c === "function") {
       const result = c();
-      await result.draw();
+      await result.render();
       await this._appendChildren(result);
     } else if (c instanceof Farinel) {
       const resolvedChild = await c.resolve();
@@ -70,16 +75,16 @@ export class Element extends HTMLElement {
         await resolvedChild.createRoot(this._element, resolvedChild);
       }
       else {
-        await resolvedChild.draw();
+        await resolvedChild.render();
 
-        this._element.appendChild(resolvedChild);
+        this._element.appendChild(resolvedChild._element);
       }
     } else if (Array.isArray(c)) {
       await this._appends(c);
     } else if (c instanceof Element) {
-      await c.draw();
+      await c.render();
 
-      this._element.appendChild(c);
+      this._element.appendChild(c._element);
     } 
   }
 }
