@@ -47,7 +47,7 @@ describe('Farinel with HTML elements', () => {
             Div({}, `counter: ${farinelInstance.state.counter}`),
             Button({}, "Increment")
               .on("click", async () => {
-                await farinelInstance.setState({
+                await farinelInstance.dispatch({
                   ...farinelInstance.state,
                   counter: farinelInstance.state.counter + 1
                 });
@@ -116,7 +116,7 @@ describe('Farinel with HTML elements', () => {
             }, `Option ${i}`))
           )
             .on("change", async (e: any) => {
-              await farinelInstance.setState({
+              await farinelInstance.dispatch({
                 value: Number(e.target.value)
               });
             })
@@ -183,7 +183,7 @@ describe('Farinel with HTML elements', () => {
             value: farinelInstance.state.value
           })
             .on("input", async (e: any) => {
-              await farinelInstance.setState({
+              await farinelInstance.dispatch({
                 value: e.target.value
               });
             })
@@ -213,7 +213,7 @@ describe('Farinel with HTML elements', () => {
         .otherwise(() => 
           Button({}, 'Login')
             .on("click", async () => {
-              await farinelInstance.setState({
+              await farinelInstance.dispatch({
                 logged: true
               });
             })
@@ -261,11 +261,11 @@ describe('Farinel with HTML elements', () => {
           .otherwise(() =>
             Button({}, text)
               .on("click", async () => {
-                await button.setState({
+                await button.dispatch({
                   login: true
                 });
 
-                await farinelInstance.setState({
+                await farinelInstance.dispatch({
                   logged: true
                 });
               })
@@ -326,11 +326,11 @@ describe('Farinel with HTML elements', () => {
             Div({},
               Button({}, text)
                 .on("click", async () => {
-                  await button.setState({
+                  await button.dispatch({
                     login: true
                   });
 
-                  await farinelInstance.setState({
+                  await farinelInstance.dispatch({
                     logged: true
                   });
                 })
@@ -405,13 +405,13 @@ describe('Farinel with HTML elements', () => {
               ),
               Button({}, text)
                 .on("click", async () => {
-                  await form.setState({
+                  await form.dispatch({
                     loading: true
                   });
                   
                   await new Promise(resolve => setTimeout(resolve, 100));
 
-                  await farinelInstance.setState({
+                  await farinelInstance.dispatch({
                     logged: true
                   });
                 })
@@ -484,11 +484,6 @@ describe('Farinel with HTML elements', () => {
       }: {
         onLogin: (email: string, password: string) => void
       }) => {
-        const formData = {
-          email: '',
-          password: ''
-        }
-
         const loginPage = farinel()
         .stating(() => ({
           loading: false,
@@ -496,18 +491,19 @@ describe('Farinel with HTML elements', () => {
         .otherwise(() =>
           Div({},
             Input({ type: 'email' })
-              .on("input", (e: any) => formData.email = e.target.value),
+              .on("input", (e: any) => loginPage.state.email = e.target.value),
             Input({ type: 'password' })
-              .on("input", (e: any) => formData.password = e.target.value),
+              .on("input", (e: any) => loginPage.state.password = e.target.value),
             Button({
               disabled: loginPage.state.loading
             }, "Login")
               .on("click", async () => {
-                await loginPage.setState({
+                await loginPage.dispatch({
+                  ...loginPage.state,
                   loading: true
                 });
 
-                await onLogin(formData.email, formData.password);
+                await onLogin(loginPage.state.email, loginPage.state.password);
               })
           )
         );
@@ -540,11 +536,11 @@ describe('Farinel with HTML elements', () => {
       const onLogin = async (email: string, password: string) => {
         const { user } = await mockApi.auth.login(email, password);
 
-        await farinelInstance.setState({ isAuthenticated: true, user });
+        await farinelInstance.dispatch({ isAuthenticated: true, user });
       }
       
       const onLogout = async () => {
-        await farinelInstance.setState({ isAuthenticated: false, user: null });
+        await farinelInstance.dispatch({ isAuthenticated: false, user: null });
       }
 
       const loginPage = LoginPage({ onLogin });
@@ -585,6 +581,9 @@ describe('Farinel with HTML elements', () => {
       loginButton.click();
 
       await loginPageUpdateState;
+
+      expect(loginPage.state.email).toEqual('test@example.com');
+      expect(loginPage.state.password).toEqual('password123');
 
       expect(domContainer.querySelector('button')?.disabled).toBe(true);
 
