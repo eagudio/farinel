@@ -521,6 +521,22 @@ describe('Farinel with HTML elements', () => {
           loginPage
         );
 
+      const DashboardPage = ({
+        user,
+        onLogout
+      }: {
+        user: any,
+        onLogout: () => void
+      }) => farinel()
+        .stating(() => ({}))
+        .otherwise(() =>
+          Div({}, 
+            P({}, `Welcome ${user.name}!`),
+            Button({}, "Logout")
+              .on("click", onLogout)
+          )
+        );
+
       const onLogin = async (email: string, password: string) => {
         const { user } = await mockApi.auth.login(email, password);
 
@@ -539,11 +555,10 @@ describe('Farinel with HTML elements', () => {
           user: null
         }))
         .when((state: any) => state.isAuthenticated, () =>
-          Div({}, 
-            P({}, `Welcome ${farinelInstance.state.user.name}!`),
-            Button({}, "Logout")
-              .on("click", onLogout)
-          )
+          DashboardPage({
+            user: farinelInstance.state.user!,
+            onLogout
+          })
         )
         .otherwise(() =>
           Container()

@@ -26,24 +26,11 @@ export class Farinel {
   }
 
   async createRoot(container: HTMLElement, farinel: Farinel) {
-    if (!container) {
-      throw new Error("Container element is required");
-    }
-
     const element = await farinel.resolve();
-    
-    if (element instanceof Farinel) {
-      await element.createRoot(container, element);
 
-      farinel._matcher.context.returnValue = element._matcher.context.returnValue;
+    const htmlElement: HTMLElement = await farinel.renderHTMLElement(this, element);
 
-      element.farinelContainer = farinel;
-    }
-    else {
-      await element.render();
-
-      container.appendChild(element.html);
-    }
+    container.appendChild(htmlElement);
 
     return this;
   }
@@ -59,15 +46,13 @@ export class Farinel {
 
     this._matcher.context = new Context(newState);
 
-    const newElement = await this.resolve();
+    const element = await this.resolve();
 
-    const htmlElement: HTMLElement = await this.renderHTMLElement(newElement);
+    const htmlElement: HTMLElement = await this.renderHTMLElement(this, element);
 
     oldElement.html.replaceWith(htmlElement);
 
-    this.updateContainer(newElement);
-
-    this._inform(newElement.html);
+    this._inform(element.html);
   }
 
   async resolve() {
@@ -168,7 +153,7 @@ export class Farinel {
     return this;
   }
 
-  private updateContainer(returnValue: any) {
+  private updateContainer(returnValue: Element) {
     if (!this.farinelContainer) {
       return;
     }
@@ -178,13 +163,17 @@ export class Farinel {
     this.farinelContainer.updateContainer(returnValue);
   }
 
-  private async renderHTMLElement(element: any): Promise<HTMLElement> {
+  private async renderHTMLElement(farinel: Farinel, element: Farinel | Element): Promise<HTMLElement> {
     if (element instanceof Farinel) {
+      element.farinelContainer = this;
+
       const result = await element.resolve();
 
-      return await this.renderHTMLElement(result);
+      return await this.renderHTMLElement(element, result);
     } else if (element instanceof Element) {
       await element.render();
+
+      farinel.updateContainer(element);
 
       return element.html;
     } else {
