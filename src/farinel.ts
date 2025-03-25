@@ -17,14 +17,6 @@ export class Farinel {
     return this._matcher.context.value;
   }
 
-  get farinelContainer(): Farinel | null {
-    return this._farinelContainer;
-  }
-
-  set farinelContainer(farinel: Farinel) {
-    this._farinelContainer = farinel;
-  }
-
   async createRoot(container: HTMLElement, farinel: Farinel) {
     const element = await farinel.resolve();
 
@@ -35,7 +27,15 @@ export class Farinel {
     return this;
   }
 
+  /**
+   * @deprecated This method is deprecated and will be removed in a future release.  
+   * Please use {@link dispatch} instead.  
+   */
   async setState(newState: any) {
+    await this.dispatch(newState);
+  }
+
+  async dispatch(newState: any) {
     if (!this._matcher.context.returnValue) {
       throw new Error("Element not found");
     }
@@ -151,6 +151,14 @@ export class Farinel {
     this._matcher.return();
 
     return this;
+  }
+
+  private get farinelContainer(): Farinel | null {
+    return this._farinelContainer;
+  }
+
+  private set farinelContainer(farinel: Farinel) {
+    this._farinelContainer = farinel;
   }
 
   private updateContainer(returnValue: Element) {

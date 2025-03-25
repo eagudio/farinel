@@ -1,5 +1,7 @@
 import { Element } from './element';
 
+export { Element };
+
 // Basic elements
 export const A = (attributes: any, ...children: any[]) => new Element("a", attributes, ...children);
 export const B = (attributes: any, ...children: any[]) => new Element("b", attributes, ...children);
