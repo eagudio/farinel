@@ -11,6 +11,6 @@ export class ReplacePatch extends Patch {
   }
 
   applyTo(element: Element) {
-    this._element.html.parentNode?.replaceChild(element.html, this._element.html);
+    element.html.parentNode?.replaceChild(this._element.html, element.html);
   }
 }
