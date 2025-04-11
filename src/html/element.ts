@@ -1,4 +1,5 @@
 import { Farinel } from "../farinel";
+import { Diff } from "../virtualdom/diff";
 
 export class Element {
   protected _element!: HTMLElement;
@@ -78,9 +79,15 @@ export class Element {
   }
 
   patch(newElement: Element) {
-    const patches = this._diff(this, newElement);
+    // const patches = this._diff(this, newElement);
 
-    this._applyPatch(this._element, patches);
+    // this._applyPatch(this._element, patches);
+
+    const diff = new Diff();
+
+    const patchTree = diff.buildPatchTree(this, newElement);
+
+    patchTree.applyTo(this);
   }
 
   private _diff(oldElement: Element | string | number | undefined | null, newElement: Element | string | number | undefined | null): any[] {
