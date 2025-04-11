@@ -53,6 +53,6 @@
     "ts-node": "^10.9.2"
   },
   "dependencies": {
-    "ciaplu": "^2.4.1"
+    "ciaplu": "^2.5.0"
   }
 }

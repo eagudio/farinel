@@ -6,7 +6,7 @@ export class Farinel {
   private _stating: (state: any) => any;
   private _matcher: FarinelMatcher;
   private _inform: any = () => {};
-  private _farinelContainer: Farinel | null = null;
+  private _element: Element | null = null;
 
   constructor() {
     this._stating = () => {};
@@ -17,22 +17,20 @@ export class Farinel {
     return this._matcher.context.value;
   }
 
+  set element(element: Element) {
+    this._element = element;
+  }
+
   async createRoot(container: HTMLElement, farinel: Farinel) {
     const element = await farinel.resolve();
 
-    const htmlElement: HTMLElement = await farinel.renderHTMLElement(this, element);
+    farinel._element = await farinel.resolveElement(element);
 
-    container.appendChild(htmlElement);
+    await farinel._element.render();
+
+    container.appendChild(farinel._element.html);
 
     return this;
-  }
-
-  /**
-   * @deprecated This method is deprecated and will be removed in a future release.  
-   * Please use {@link dispatch} instead.  
-   */
-  async setState(newState: any) {
-    await this.dispatch(newState);
   }
 
   async dispatch(newState: any) {
@@ -40,25 +38,30 @@ export class Farinel {
       throw new Error("Element not found");
     }
 
-    const oldElement = this._matcher.context.returnValue;
+    // const oldElement: Element = this._matcher.context.returnValue;
     
     this._stating = async(state: any) => Promise.resolve(newState);
 
     this._matcher.context = new Context(newState);
 
-    const element = await this.resolve();
+    const newRenderedElement: Farinel | Element = await this.resolve();
 
-    const htmlElement: HTMLElement = await this.renderHTMLElement(this, element);
+    const newElement: Element = await this.resolveElement(newRenderedElement);
 
-    oldElement.html.replaceWith(htmlElement);
+    // oldElement.html.replaceWith(newElement.html);
+    this._element?.patch(newElement);
 
-    this._inform(element.html);
+    this._inform(newElement.html);
   }
 
   async resolve() {
     await this._matcher;
 
     return this._matcher.context.returnValue;
+  }
+
+  rendering(handler: () => Promise<any> | any) {
+    return this.otherwise(handler);
   }
 
   spy() {
@@ -153,37 +156,13 @@ export class Farinel {
     return this;
   }
 
-  private get farinelContainer(): Farinel | null {
-    return this._farinelContainer;
-  }
-
-  private set farinelContainer(farinel: Farinel) {
-    this._farinelContainer = farinel;
-  }
-
-  private updateContainer(returnValue: Element) {
-    if (!this.farinelContainer) {
-      return;
-    }
-
-    this.farinelContainer._matcher.context.returnValue = returnValue;
-
-    this.farinelContainer.updateContainer(returnValue);
-  }
-
-  private async renderHTMLElement(farinel: Farinel, element: Farinel | Element): Promise<HTMLElement> {
+  private async resolveElement(element: Farinel | Element): Promise<Element> {
     if (element instanceof Farinel) {
-      element.farinelContainer = this;
-
       const result = await element.resolve();
 
-      return await this.renderHTMLElement(element, result);
+      return await this.resolveElement(result);
     } else if (element instanceof Element) {
-      await element.render();
-
-      farinel.updateContainer(element);
-
-      return element.html;
+      return element;
     } else {
       throw new Error("Invalid element");
     }
