@@ -25,6 +25,10 @@ export class Element {
     return this._attributes;
   }
 
+  get props() {
+    return this._attributes;
+  }
+
   get events() {
     return this._events;
   }
@@ -180,11 +184,23 @@ export class Element {
           if (oldChild !== newChild) {
               patchesChildren.push({ index: i, patches: [{ type: 'text', text: newChild }] });
           }
-        } else if (oldChild instanceof Element && newChild instanceof Element) {
+          continue;
+        }
+
+        if (oldChild instanceof Element && newChild instanceof Element) {
           const childPatches = this._diff(oldChild, newChild);
           if (childPatches.length > 0) {
               patchesChildren.push({ index: i, patches: childPatches });
           }
+          continue;
+        }
+
+        if (oldChild instanceof Farinel && newChild instanceof Farinel) {
+          const childPatches = this._diff(oldChild.element, newChild.element);
+          if (childPatches.length > 0) {
+              patchesChildren.push({ index: i, patches: childPatches });
+          }
+          continue;
         }
     }
 
@@ -310,7 +326,9 @@ export class Element {
         await resolvedChild.createRoot(this._element, resolvedChild);
       }
       else {
-        c.element = await resolvedChild.render();
+        await resolvedChild.render();
+
+        c.element = resolvedChild;
 
         this._element.appendChild(resolvedChild._element);
       }
@@ -320,6 +338,8 @@ export class Element {
       await c.render();
 
       this._element.appendChild(c._element);
-    } 
+    } else if (c === true || c === false) {
+      this._element.appendChild(document.createTextNode(""));
+    }
   }
 }

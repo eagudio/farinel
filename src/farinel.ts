@@ -21,6 +21,10 @@ export class Farinel {
     this._element = element;
   }
 
+  get element(): Element | null {
+    return this._element;
+  }
+
   async createRoot(container: HTMLElement, farinel: Farinel) {
     const element = await farinel.resolve();
 
@@ -37,21 +41,20 @@ export class Farinel {
     if (!this._matcher.context.returnValue) {
       throw new Error("Element not found");
     }
-
-    // const oldElement: Element = this._matcher.context.returnValue;
     
     this._stating = async(state: any) => Promise.resolve(newState);
 
     this._matcher.context = new Context(newState);
 
-    const newRenderedElement: Farinel | Element = await this.resolve();
+    const newResolvedElement: Farinel | Element = await this.resolve();
 
-    const newElement: Element = await this.resolveElement(newRenderedElement);
+    const newElement: Element = await this.resolveElement(newResolvedElement);
 
-    // oldElement.html.replaceWith(newElement.html);
+    await newElement.render();
+
     this._element?.patch(newElement);
 
-    this._inform(newElement.html);
+    this._inform(this._element?.html);
   }
 
   async resolve() {
@@ -160,7 +163,9 @@ export class Farinel {
     if (element instanceof Farinel) {
       const result = await element.resolve();
 
-      return await this.resolveElement(result);
+      element._element = await this.resolveElement(result);
+
+      return element._element;
     } else if (element instanceof Element) {
       return element;
     } else {
