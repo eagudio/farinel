@@ -25,6 +25,10 @@ export class Farinel {
     return this._element;
   }
 
+  get html() {
+    return this._element?.html;
+  }
+
   async createRoot(container: HTMLElement, farinel: Farinel) {
     const element = await farinel.resolve();
 

@@ -381,99 +381,99 @@ describe('Farinel with HTML elements', () => {
       expect(button.textContent).toBe('Logout');
     });
 
-    // it('should correctly render deeply nested farinel elements', async () => {
-    //   const LoginForm = ({
-    //     text,
-    //     showLogin,
-    //   }: {
-    //     text: string,
-    //     showLogin: boolean
-    //   }) => {
-    //     const form: Farinel = farinel()
-    //       .stating(() => ({
-    //         loading: false
-    //       }))
-    //       .when(() => showLogin === false, () =>
-    //         Button({}, text)
-    //       )
-    //       .otherwise(() =>
-    //         Div({},
-    //           P({}, 'Please login:'),
-    //           Div({},
-    //             Input({
-    //               type: 'text',
-    //               placeholder: 'Username'
-    //             }),
-    //             Input({
-    //               type: 'password',
-    //               placeholder: 'Password'
-    //             })
-    //           ),
-    //           Button({ disabled: form.state.loading }, form.state.loading ? 'Waiting...' : text)
-    //             .on("click", async () => {
-    //               await form.dispatch({
-    //                 loading: true
-    //               });
+    it('should correctly render deeply nested farinel elements', async () => {
+      const LoginForm = ({
+        text,
+        showLogin,
+      }: {
+        text: string,
+        showLogin: boolean
+      }) => {
+        const form: Farinel = farinel()
+          .stating(() => ({
+            loading: false
+          }))
+          .when(() => showLogin === false, () =>
+            Button({}, text)
+          )
+          .otherwise(() =>
+            Div({},
+              P({}, 'Please login:'),
+              Div({},
+                Input({
+                  type: 'text',
+                  placeholder: 'Username'
+                }),
+                Input({
+                  type: 'password',
+                  placeholder: 'Password'
+                })
+              ),
+              Button({ disabled: form.state.loading }, form.state.loading ? 'Waiting...' : text)
+                .on("click", async () => {
+                  await form.dispatch({
+                    loading: true
+                  });
                   
-    //               await new Promise(resolve => setTimeout(resolve, 100));
+                  await new Promise(resolve => setTimeout(resolve, 100));
 
-    //               await farinelInstance.dispatch({
-    //                 logged: true
-    //               });
-    //             })
-    //         )
-    //       );
+                  await farinelInstance.dispatch({
+                    logged: true
+                  });
+                })
+            )
+          );
 
-    //     return form;
-    //   }
+        return form;
+      }
 
-    //   const loginForm = LoginForm({ text: 'Login', showLogin: true });
+      const loginForm = LoginForm({ text: 'Login', showLogin: true });
 
-    //   farinelInstance
-    //     .stating(() => ({
-    //       logged: false,
-    //     }))
-    //     .when(() => farinelInstance.state.logged, () =>
-    //       Div({},
-    //         P({}, 'Welcome back!'),
-    //         LoginForm({ text: 'Logout', showLogin: !farinelInstance.state.logged })
-    //       )
-    //     )
-    //     .otherwise(() => 
-    //       Div({},
-    //         P({}, 'Please login to continue'),
-    //         loginForm
-    //       )
-    //     );
+      farinelInstance
+        .stating(() => ({
+          logged: false,
+        }))
+        .when(() => farinelInstance.state.logged, () =>
+          Div({},
+            P({}, 'Welcome back!'),
+            LoginForm({ text: 'Logout', showLogin: !farinelInstance.state.logged })
+          )
+        )
+        .otherwise(() => 
+          Div({},
+            P({}, 'Please login to continue'),
+            loginForm
+          )
+        );
 
-    //   await farinel().createRoot(domContainer, farinelInstance);
+      await farinel().createRoot(domContainer, farinelInstance);
 
-    //   let button = domContainer.querySelector('button') as HTMLButtonElement;
-    //   let inputs = domContainer.querySelectorAll('input');
-    //   expect(button).toBeTruthy();
-    //   expect(button.textContent).toBe('Login');
-    //   expect(inputs.length).toBe(2);
-    //   expect(domContainer.innerHTML).toContain('Please login to continue');
+      let button = domContainer.querySelector('button') as HTMLButtonElement;
+      let inputs = domContainer.querySelectorAll('input');
+      expect(button).toBeTruthy();
+      expect(button.textContent).toBe('Login');
+      expect(inputs.length).toBe(2);
+      expect(domContainer.innerHTML).toContain('Please login to continue');
       
-    //   const loginFormUpdateState = loginForm.spy();
-    //   const farinelInstanceUpdateState = farinelInstance.spy();
+      const loginFormUpdateState = loginForm.spy();
+      const farinelInstanceUpdateState = farinelInstance.spy();
 
-    //   button.click();
+      button.click();
 
-    //   await loginFormUpdateState;
+      await loginFormUpdateState;
 
-    //   expect(domContainer.querySelector('button')?.textContent).toBe('Waiting...');
-    //   expect(domContainer.querySelector('button')?.disabled).toBe(true);
+      expect(domContainer.querySelector('button')?.textContent).toBe('Waiting...');
+      expect(domContainer.querySelector('button')?.disabled).toBe(true);
 
-    //   await farinelInstanceUpdateState;
+      await farinelInstanceUpdateState;
 
-    //   button = domContainer.querySelector('button') as HTMLButtonElement;
-    //   inputs = domContainer.querySelectorAll('input');
-    //   expect(button).toBeTruthy();
-    //   expect(button.textContent).toBe('Logout');
-    //   expect(inputs.length).toBe(0);
-    //   expect(domContainer.innerHTML).toContain('Welcome back!');
-    // });
+      button = domContainer.querySelector('button') as HTMLButtonElement;
+      inputs = domContainer.querySelectorAll('input');
+      expect(button).toBeTruthy();
+      expect(button.textContent).toBe('Logout');
+      expect(inputs.length).toBe(0);
+      expect(domContainer.innerHTML).toContain('Welcome back!');
+    });
   });
 
   // describe('Login/Logout flow', () => {

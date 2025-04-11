@@ -1,3 +1,4 @@
+import { Farinel } from "../farinel";
 import { Element } from "../html";
 import { Patch } from "./patch";
 import { PatchTree } from "./patchtree";
@@ -21,6 +22,22 @@ export class Diff {
       patchTree.patch = new ReplacePatch(newNode as Element);
 
       return patchTree;
+    }
+
+    if (oldNode instanceof Farinel && newNode instanceof Farinel) {
+      if (!oldNode.element || !newNode.element) {
+        return patchTree;
+      }
+
+      if (oldNode.element.tag !== newNode.element.tag) {
+        patchTree.patch = new ReplacePatch(newNode.element as Element);
+
+        return patchTree;
+      }
+
+      patchTree.attributesPatch = new PropsPatch(this._diffAttributes(oldNode.element, newNode.element));
+
+      patchTree.childrenPatches = this._diffChildren(oldNode.element, newNode.element);
     }
 
     if (oldNode instanceof Element && newNode instanceof Element) {
