@@ -1,6 +1,6 @@
 import { Context } from "ciaplu";
 import { FarinelMatcher } from "./fainelmatcher";
-import { Element } from "./html/element";
+import { Element } from "./virtualdom/element";
 
 export class Farinel {
   private _stating: (state: any) => any;

@@ -1,14 +1,28 @@
 import { Farinel } from "../farinel";
 import { Element } from "../html";
+import { AppendPatch } from "./appendpatch";
 import { Patch } from "./patch";
 import { PatchTree } from "./patchtree";
 import { PropsPatch } from "./propspatch";
+import { RemovePatch } from "./removepatch";
 import { ReplacePatch } from "./replacepatch";
 import { TextPatch } from "./textpatch";
 
 export class Diff {
   buildPatchTree(oldNode: Element | string | number | undefined | null, newNode: Element | string | number | undefined | null) {
     const patchTree = new PatchTree();
+
+    if (oldNode === null || oldNode === undefined) {
+      patchTree.patch = new AppendPatch(newNode as Element);
+
+      return patchTree;
+    }
+
+    if (newNode === null || newNode === undefined) {
+      patchTree.patch = new RemovePatch();
+
+      return patchTree;
+    }
 
     if (typeof oldNode === 'string' || typeof oldNode === 'number') {
       if (oldNode !== newNode) {
@@ -75,11 +89,29 @@ export class Diff {
 
   private _diffChildren(oldNode: Element, newNode: Element): any {
     const childrenPatches: Patch[] = [];
+    let index = 0;
 
-    oldNode.children.forEach((child, index) => {
-      childrenPatches.push(this.buildPatchTree(child, newNode.children[index]));
-    });
+    while (index < oldNode.children.length) {
+      const child = oldNode.children[index];
+      const newChild = newNode.children[index];
 
+      if (newChild === null || newChild === undefined) {
+        childrenPatches.push(this.buildPatchTree(child, null));
+      } else {
+        childrenPatches.push(this.buildPatchTree(child, newChild));
+      }
+
+      index++;
+    }
+
+    while (index < newNode.children.length) {
+      const newChild = newNode.children[index];
+
+      childrenPatches.push(this.buildPatchTree(null, newChild));
+
+      index++;
+    }
+    
     return childrenPatches;
   }
 }

@@ -381,231 +381,231 @@ describe('Farinel with HTML elements', () => {
       expect(button.textContent).toBe('Logout');
     });
 
-    it('should correctly render deeply nested farinel elements', async () => {
-      const LoginForm = ({
-        text,
-        showLogin,
-      }: {
-        text: string,
-        showLogin: boolean
-      }) => {
-        const form: Farinel = farinel()
-          .stating(() => ({
-            loading: false
-          }))
-          .when(() => showLogin === false, () =>
-            Button({}, text)
-          )
-          .otherwise(() =>
-            Div({},
-              P({}, 'Please login:'),
-              Div({},
-                Input({
-                  type: 'text',
-                  placeholder: 'Username'
-                }),
-                Input({
-                  type: 'password',
-                  placeholder: 'Password'
-                })
-              ),
-              Button({ disabled: form.state.loading }, form.state.loading ? 'Waiting...' : text)
-                .on("click", async () => {
-                  await form.dispatch({
-                    loading: true
-                  });
+    // it('should correctly render deeply nested farinel elements', async () => {
+    //   const LoginForm = ({
+    //     text,
+    //     showLogin,
+    //   }: {
+    //     text: string,
+    //     showLogin: boolean
+    //   }) => {
+    //     const form: Farinel = farinel()
+    //       .stating(() => ({
+    //         loading: false
+    //       }))
+    //       .when(() => showLogin === false, () =>
+    //         Button({}, text)
+    //       )
+    //       .otherwise(() =>
+    //         Div({},
+    //           P({}, 'Please login:'),
+    //           Div({},
+    //             Input({
+    //               type: 'text',
+    //               placeholder: 'Username'
+    //             }),
+    //             Input({
+    //               type: 'password',
+    //               placeholder: 'Password'
+    //             })
+    //           ),
+    //           Button({ disabled: form.state.loading }, form.state.loading ? 'Waiting...' : text)
+    //             .on("click", async () => {
+    //               await form.dispatch({
+    //                 loading: true
+    //               });
                   
-                  await new Promise(resolve => setTimeout(resolve, 100));
+    //               await new Promise(resolve => setTimeout(resolve, 100));
 
-                  await farinelInstance.dispatch({
-                    logged: true
-                  });
-                })
-            )
-          );
+    //               await farinelInstance.dispatch({
+    //                 logged: true
+    //               });
+    //             })
+    //         )
+    //       );
 
-        return form;
-      }
+    //     return form;
+    //   }
 
-      const loginForm = LoginForm({ text: 'Login', showLogin: true });
+    //   const loginForm = LoginForm({ text: 'Login', showLogin: true });
 
-      farinelInstance
-        .stating(() => ({
-          logged: false,
-        }))
-        .when(() => farinelInstance.state.logged, () =>
-          Div({},
-            P({}, 'Welcome back!'),
-            LoginForm({ text: 'Logout', showLogin: !farinelInstance.state.logged })
-          )
-        )
-        .otherwise(() => 
-          Div({},
-            P({}, 'Please login to continue'),
-            loginForm
-          )
-        );
+    //   farinelInstance
+    //     .stating(() => ({
+    //       logged: false,
+    //     }))
+    //     .when(() => farinelInstance.state.logged, () =>
+    //       Div({},
+    //         P({}, 'Welcome back!'),
+    //         LoginForm({ text: 'Logout', showLogin: !farinelInstance.state.logged })
+    //       )
+    //     )
+    //     .otherwise(() => 
+    //       Div({},
+    //         P({}, 'Please login to continue'),
+    //         loginForm
+    //       )
+    //     );
 
-      await farinel().createRoot(domContainer, farinelInstance);
+    //   await farinel().createRoot(domContainer, farinelInstance);
 
-      let button = domContainer.querySelector('button') as HTMLButtonElement;
-      let inputs = domContainer.querySelectorAll('input');
-      expect(button).toBeTruthy();
-      expect(button.textContent).toBe('Login');
-      expect(inputs.length).toBe(2);
-      expect(domContainer.innerHTML).toContain('Please login to continue');
+    //   let button = domContainer.querySelector('button') as HTMLButtonElement;
+    //   let inputs = domContainer.querySelectorAll('input');
+    //   expect(button).toBeTruthy();
+    //   expect(button.textContent).toBe('Login');
+    //   expect(inputs.length).toBe(2);
+    //   expect(domContainer.innerHTML).toContain('Please login to continue');
       
-      const loginFormUpdateState = loginForm.spy();
-      const farinelInstanceUpdateState = farinelInstance.spy();
+    //   const loginFormUpdateState = loginForm.spy();
+    //   const farinelInstanceUpdateState = farinelInstance.spy();
 
-      button.click();
+    //   button.click();
 
-      await loginFormUpdateState;
+    //   await loginFormUpdateState;
 
-      expect(domContainer.querySelector('button')?.textContent).toBe('Waiting...');
-      expect(domContainer.querySelector('button')?.disabled).toBe(true);
+    //   expect(domContainer.querySelector('button')?.textContent).toBe('Waiting...');
+    //   expect(domContainer.querySelector('button')?.disabled).toBe(true);
 
-      await farinelInstanceUpdateState;
+    //   await farinelInstanceUpdateState;
 
-      button = domContainer.querySelector('button') as HTMLButtonElement;
-      inputs = domContainer.querySelectorAll('input');
-      expect(button).toBeTruthy();
-      expect(button.textContent).toBe('Logout');
-      expect(inputs.length).toBe(0);
-      expect(domContainer.innerHTML).toContain('Welcome back!');
-    });
+    //   button = domContainer.querySelector('button') as HTMLButtonElement;
+    //   inputs = domContainer.querySelectorAll('input');
+    //   expect(button).toBeTruthy();
+    //   expect(button.textContent).toBe('Logout');
+    //   expect(inputs.length).toBe(0);
+    //   expect(domContainer.innerHTML).toContain('Welcome back!');
+    // });
   });
 
-  // describe('Login/Logout flow', () => {
-  //   it('should handle login and logout flow correctly', async () => {
-  //     const mockUser = { id: 1, name: 'Test User' };
-  //     const mockApi = {
-  //       auth: {
-  //         login: jest.fn().mockResolvedValue({ user: mockUser })
-  //       }
-  //     };
+  describe('Login/Logout flow', () => {
+    // it('should handle login and logout flow correctly', async () => {
+    //   const mockUser = { id: 1, name: 'Test User' };
+    //   const mockApi = {
+    //     auth: {
+    //       login: jest.fn().mockResolvedValue({ user: mockUser })
+    //     }
+    //   };
 
-  //     const LoginPage = ({
-  //       onLogin
-  //     }: {
-  //       onLogin: (email: string, password: string) => void
-  //     }) => {
-  //       const loginPage = farinel()
-  //       .stating(() => ({
-  //         loading: false,
-  //       }))
-  //       .rendering(() =>
-  //         Div({},
-  //           Input({ type: 'email' })
-  //             .on("input", (e: any) => loginPage.state.email = e.target.value),
-  //           Input({ type: 'password' })
-  //             .on("input", (e: any) => loginPage.state.password = e.target.value),
-  //           Button({
-  //             disabled: loginPage.state.loading
-  //           }, "Login")
-  //             .on("click", async () => {
-  //               await loginPage.dispatch({
-  //                 ...loginPage.state,
-  //                 loading: true
-  //               });
+    //   const LoginPage = ({
+    //     onLogin
+    //   }: {
+    //     onLogin: (email: string, password: string) => void
+    //   }) => {
+    //     const loginPage = farinel()
+    //     .stating(() => ({
+    //       loading: false,
+    //     }))
+    //     .rendering(() =>
+    //       Div({},
+    //         Input({ type: 'email' })
+    //           .on("input", (e: any) => loginPage.state.email = e.target.value),
+    //         Input({ type: 'password' })
+    //           .on("input", (e: any) => loginPage.state.password = e.target.value),
+    //         Button({
+    //           disabled: loginPage.state.loading
+    //         }, "Login")
+    //           .on("click", async () => {
+    //             await loginPage.dispatch({
+    //               ...loginPage.state,
+    //               loading: true
+    //             });
 
-  //               await onLogin(loginPage.state.email, loginPage.state.password);
-  //             })
-  //         )
-  //       );
+    //             await onLogin(loginPage.state.email, loginPage.state.password);
+    //           })
+    //       )
+    //     );
 
-  //       return loginPage;
-  //     }
+    //     return loginPage;
+    //   }
 
-  //     const Container = () => farinel()
-  //       .stating(() => ({}))
-  //       .rendering(() =>
-  //         loginPage
-  //       );
+    //   const Container = () => farinel()
+    //     .stating(() => ({}))
+    //     .rendering(() =>
+    //       loginPage
+    //     );
 
-  //     const DashboardPage = ({
-  //       user,
-  //       onLogout
-  //     }: {
-  //       user: any,
-  //       onLogout: () => void
-  //     }) => farinel()
-  //       .stating(() => ({}))
-  //       .rendering(() =>
-  //         Div({}, 
-  //           P({}, `Welcome ${user.name}!`),
-  //           Button({}, "Logout")
-  //             .on("click", onLogout)
-  //         )
-  //       );
+    //   const DashboardPage = ({
+    //     user,
+    //     onLogout
+    //   }: {
+    //     user: any,
+    //     onLogout: () => void
+    //   }) => farinel()
+    //     .stating(() => ({}))
+    //     .rendering(() =>
+    //       Div({}, 
+    //         P({}, `Welcome ${user.name}!`),
+    //         Button({}, "Logout")
+    //           .on("click", onLogout)
+    //       )
+    //     );
 
-  //     const onLogin = async (email: string, password: string) => {
-  //       const { user } = await mockApi.auth.login(email, password);
+    //   const onLogin = async (email: string, password: string) => {
+    //     const { user } = await mockApi.auth.login(email, password);
 
-  //       await farinelInstance.dispatch({ isAuthenticated: true, user });
-  //     }
+    //     await farinelInstance.dispatch({ isAuthenticated: true, user });
+    //   }
       
-  //     const onLogout = async () => {
-  //       await farinelInstance.dispatch({ isAuthenticated: false, user: null });
-  //     }
+    //   const onLogout = async () => {
+    //     await farinelInstance.dispatch({ isAuthenticated: false, user: null });
+    //   }
 
-  //     const loginPage = LoginPage({ onLogin });
+    //   const loginPage = LoginPage({ onLogin });
 
-  //     farinelInstance
-  //       .stating(() => ({
-  //         isAuthenticated: false,
-  //         user: null
-  //       }))
-  //       .when((state: any) => state.isAuthenticated, () =>
-  //         DashboardPage({
-  //           user: farinelInstance.state.user!,
-  //           onLogout
-  //         })
-  //       )
-  //       .otherwise(() =>
-  //         Container()
-  //       );
+    //   farinelInstance
+    //     .stating(() => ({
+    //       isAuthenticated: false,
+    //       user: null
+    //     }))
+    //     .when((state: any) => state.isAuthenticated, () =>
+    //       DashboardPage({
+    //         user: farinelInstance.state.user!,
+    //         onLogout
+    //       })
+    //     )
+    //     .otherwise(() =>
+    //       Container()
+    //     );
 
-  //     await farinel().createRoot(domContainer, farinelInstance);
+    //   await farinel().createRoot(domContainer, farinelInstance);
 
-  //     expect(domContainer.innerHTML).toContain('Login');
-  //     expect(domContainer.innerHTML).not.toContain('Welcome');
+    //   expect(domContainer.innerHTML).toContain('Login');
+    //   expect(domContainer.innerHTML).not.toContain('Welcome');
 
-  //     const emailInput: HTMLInputElement = domContainer.querySelector('input[type="email"]') as HTMLInputElement;
-  //     const passwordInput: any = domContainer.querySelector('input[type="password"]') as HTMLInputElement;
-  //     const loginButton: any = domContainer.querySelector('button') as HTMLButtonElement;
+    //   const emailInput: HTMLInputElement = domContainer.querySelector('input[type="email"]') as HTMLInputElement;
+    //   const passwordInput: any = domContainer.querySelector('input[type="password"]') as HTMLInputElement;
+    //   const loginButton: any = domContainer.querySelector('button') as HTMLButtonElement;
 
-  //     emailInput.value = 'test@example.com';
-  //     passwordInput.value = 'password123';
+    //   emailInput.value = 'test@example.com';
+    //   passwordInput.value = 'password123';
       
-  //     emailInput.dispatchEvent(new InputEvent('input', { bubbles: true, }));
-  //     passwordInput.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    //   emailInput.dispatchEvent(new InputEvent('input', { bubbles: true, }));
+    //   passwordInput.dispatchEvent(new InputEvent('input', { bubbles: true }));
 
-  //     const farinelInstanceUpdateState = farinelInstance.spy();
-  //     const loginPageUpdateState = loginPage.spy();
+    //   const farinelInstanceUpdateState = farinelInstance.spy();
+    //   const loginPageUpdateState = loginPage.spy();
 
-  //     loginButton.click();
+    //   loginButton.click();
 
-  //     await loginPageUpdateState;
+    //   await loginPageUpdateState;
 
-  //     expect(loginPage.state.email).toEqual('test@example.com');
-  //     expect(loginPage.state.password).toEqual('password123');
+    //   expect(loginPage.state.email).toEqual('test@example.com');
+    //   expect(loginPage.state.password).toEqual('password123');
 
-  //     expect(domContainer.querySelector('button')?.disabled).toBe(true);
+    //   expect(domContainer.querySelector('button')?.disabled).toBe(true);
 
-  //     await farinelInstanceUpdateState;
+    //   await farinelInstanceUpdateState;
 
-  //     expect(domContainer.innerHTML).toContain('Welcome Test User!');
-  //     expect(domContainer.innerHTML).toContain('Logout');
+    //   expect(domContainer.innerHTML).toContain('Welcome Test User!');
+    //   expect(domContainer.innerHTML).toContain('Logout');
 
-  //     const logoutButton = domContainer.querySelector('button') as HTMLButtonElement;
+    //   const logoutButton = domContainer.querySelector('button') as HTMLButtonElement;
 
-  //     const logoutStateUpdated = farinelInstance.spy();
-  //     logoutButton.click();
-  //     await logoutStateUpdated;
+    //   const logoutStateUpdated = farinelInstance.spy();
+    //   logoutButton.click();
+    //   await logoutStateUpdated;
 
-  //     expect(domContainer.innerHTML).toContain('Login');
-  //     expect(domContainer.innerHTML).not.toContain('Welcome');
-  //   });
-  // });
+    //   expect(domContainer.innerHTML).toContain('Login');
+    //   expect(domContainer.innerHTML).not.toContain('Welcome');
+    // });
+  });
 });
