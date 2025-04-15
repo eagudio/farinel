@@ -38,21 +38,21 @@ export class Diff {
       return patchTree;
     }
 
-    if (oldNode instanceof Farinel && newNode instanceof Farinel) {
-      if (!oldNode.element || !newNode.element) {
-        return patchTree;
-      }
+    // if (oldNode instanceof Farinel && newNode instanceof Farinel) {
+    //   if (!oldNode.element || !newNode.element) {
+    //     return patchTree;
+    //   }
 
-      if (oldNode.element.tag !== newNode.element.tag) {
-        patchTree.patch = new ReplacePatch(newNode.element as Element);
+    //   if (oldNode.element.tag !== newNode.element.tag) {
+    //     patchTree.patch = new ReplacePatch(newNode.element as Element);
 
-        return patchTree;
-      }
+    //     return patchTree;
+    //   }
 
-      patchTree.attributesPatch = new PropsPatch(this._diffAttributes(oldNode.element, newNode.element));
+    //   patchTree.attributesPatch = new PropsPatch(this._diffAttributes(oldNode.element, newNode.element));
 
-      patchTree.childrenPatches = this._diffChildren(oldNode.element, newNode.element);
-    }
+    //   patchTree.childrenPatches = this._diffChildren(oldNode.element, newNode.element);
+    // }
 
     if (oldNode instanceof Element && newNode instanceof Element) {
       if (oldNode.tag !== newNode.tag) {

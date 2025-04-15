@@ -5,7 +5,7 @@ export class AppendPatch extends Patch {
   private _element: Element;
 
   constructor(element: Element) {
-    super("append");
+    super();
 
     this._element = element;
   }

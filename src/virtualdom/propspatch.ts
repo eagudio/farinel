@@ -5,7 +5,7 @@ export class PropsPatch extends Patch {
   private _props: Record<string, any>;
 
   constructor(props: Record<string, any>) {
-    super("props");
+    super();
 
     this._props = props;
   }

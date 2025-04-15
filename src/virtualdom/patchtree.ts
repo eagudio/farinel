@@ -7,10 +7,6 @@ export class PatchTree extends Patch {
   private _attributesPatch: Patch = new NullPatch();
   private _childrenPatches: Patch[] = [];
 
-  constructor() {
-    super("tree");
-  }
-
   get patch() {
     return this._patch;
   }

@@ -5,7 +5,7 @@ export class TextPatch extends Patch {
   private _text: string;
 
   constructor(text: string) {
-    super("text");
+    super();
 
     this._text = text;
   }

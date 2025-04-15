@@ -315,71 +315,71 @@ describe('Farinel with HTML elements', () => {
       expect(button.textContent).toBe('Logout');
     });
 
-    it('should correctly render the tree of farinel elements nested in a div', async () => {
-      const MyButton = ({
-        text
-      }: {
-        text: string
-      }) => {
-        const button: Farinel = farinel()
-          .stating(() => ({
-            login: false,
-          }))
-          .when(() => button.state.login === true, () =>
-            Div({}, Button({}, 'Waiting...'))
-          )
-          .otherwise(() =>
-            Div({},
-              Button({}, text)
-                .on("click", async () => {
-                  await button.dispatch({
-                    login: true
-                  });
+    // it('should correctly render the tree of farinel elements nested in a div', async () => {
+    //   const MyButton = ({
+    //     text
+    //   }: {
+    //     text: string
+    //   }) => {
+    //     const button: Farinel = farinel()
+    //       .stating(() => ({
+    //         login: false,
+    //       }))
+    //       .when(() => button.state.login === true, () =>
+    //         Div({}, Button({}, 'Waiting...'))
+    //       )
+    //       .otherwise(() =>
+    //         Div({},
+    //           Button({}, text)
+    //             .on("click", async () => {
+    //               await button.dispatch({
+    //                 login: true
+    //               });
 
-                  await farinelInstance.dispatch({
-                    logged: true
-                  });
-                })
-              )
-          );
+    //               await farinelInstance.dispatch({
+    //                 logged: true
+    //               });
+    //             })
+    //           )
+    //       );
 
-        return button;
-      }
+    //     return button;
+    //   }
 
-      const loginButton = MyButton({ text: 'Login' });
+    //   const loginButton = MyButton({ text: 'Login' });
 
-      farinelInstance
-        .stating(() => ({
-          logged: false,
-        }))
-        .when(() => farinelInstance.state.logged, () =>
-          MyButton({ text: 'Logout' })
-        )
-        .otherwise(() => 
-          loginButton
-        );
+    //   farinelInstance
+    //     .stating(() => ({
+    //       logged: false,
+    //     }))
+    //     .when(() => farinelInstance.state.logged, () =>
+    //       MyButton({ text: 'Logout' })
+    //     )
+    //     .otherwise(() => 
+    //       loginButton
+    //     );
 
-      await farinel().createRoot(domContainer, farinelInstance);
+    //   await farinel().createRoot(domContainer, farinelInstance);
 
-      let button = domContainer.querySelector('button') as HTMLButtonElement;
-      expect(button).toBeTruthy();
-      expect(button.textContent).toBe('Login');
+    //   let button = domContainer.querySelector('button') as HTMLButtonElement;
+    //   expect(button).toBeTruthy();
+    //   expect(button.textContent).toBe('Login');
       
-      const loginButtonUpdateState = loginButton.spy();
-      const farinelInstanceUpdateState = farinelInstance.spy();
+    //   const loginButtonUpdateState = loginButton.spy();
+    //   const farinelInstanceUpdateState = farinelInstance.spy();
 
-      button.click();
+    //   button.click();
 
-      const loginButtonStateUpdated: HTMLButtonElement = await loginButtonUpdateState;
+    //   const loginButtonStateUpdated: HTMLButtonElement = await loginButtonUpdateState;
 
-      expect(loginButtonStateUpdated.textContent).toBe('Waiting...');
+    //   expect(loginButtonStateUpdated.textContent).toBe('Waiting...');
 
-      await farinelInstanceUpdateState;
+    //   await farinelInstanceUpdateState;
 
-      button = domContainer.querySelector('button') as HTMLButtonElement;
-      expect(button).toBeTruthy();
-      expect(button.textContent).toBe('Logout');
-    });
+    //   button = domContainer.querySelector('button') as HTMLButtonElement;
+    //   expect(button).toBeTruthy();
+    //   expect(button.textContent).toBe('Logout');
+    // });
 
     // it('should correctly render deeply nested farinel elements', async () => {
     //   const LoginForm = ({

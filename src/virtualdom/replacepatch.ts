@@ -5,7 +5,7 @@ export class ReplacePatch extends Patch {
   private _element: Element;
 
   constructor(element: Element) {
-    super("replace");
+    super();
 
     this._element = element;
   }

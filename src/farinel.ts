@@ -1,14 +1,15 @@
 import { Context } from "ciaplu";
-import { FarinelMatcher } from "./fainelmatcher";
+import { FarinelMatcher } from "./farinelmatcher";
 import { Element } from "./virtualdom/element";
 
-export class Farinel {
+export class Farinel extends Element {
   private _stating: (state: any) => any;
   private _matcher: FarinelMatcher;
   private _inform: any = () => {};
-  private _element: Element | null = null;
 
   constructor() {
+    super('div', {});
+
     this._stating = () => {};
     this._matcher = new FarinelMatcher({});
   }
@@ -17,26 +18,10 @@ export class Farinel {
     return this._matcher.context.value;
   }
 
-  set element(element: Element) {
-    this._element = element;
-  }
-
-  get element(): Element | null {
-    return this._element;
-  }
-
-  get html() {
-    return this._element?.html;
-  }
-
   async createRoot(container: HTMLElement, farinel: Farinel) {
-    const element = await farinel.resolve();
+    await farinel.render();
 
-    farinel._element = await farinel.resolveElement(element);
-
-    await farinel._element.render();
-
-    container.appendChild(farinel._element.html);
+    container.appendChild(farinel.html);
 
     return this;
   }
@@ -50,21 +35,19 @@ export class Farinel {
 
     this._matcher.context = new Context(newState);
 
-    const newResolvedElement: Farinel | Element = await this.resolve();
+    await this.render();
 
-    const newElement: Element = await this.resolveElement(newResolvedElement);
-
-    await newElement.render();
-
-    this._element?.patch(newElement);
-
-    this._inform(this._element?.html);
+    this._inform(this.html);
   }
 
-  async resolve() {
-    await this._matcher;
+  async render() {
+    await super.render();
 
-    return this._matcher.context.returnValue;
+    const element = await this._matcher;
+
+    await element.render();
+
+    this.patch(element);
   }
 
   rendering(handler: () => Promise<any> | any) {
@@ -161,19 +144,5 @@ export class Farinel {
     this._matcher.return();
 
     return this;
-  }
-
-  private async resolveElement(element: Farinel | Element): Promise<Element> {
-    if (element instanceof Farinel) {
-      const result = await element.resolve();
-
-      element._element = await this.resolveElement(result);
-
-      return element._element;
-    } else if (element instanceof Element) {
-      return element;
-    } else {
-      throw new Error("Invalid element");
-    }
   }
 }

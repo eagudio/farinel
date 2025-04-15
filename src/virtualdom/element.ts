@@ -39,37 +39,39 @@ export class Element {
   }
   
   async render() {
-    if (!this._element) {
-      if (this._tag === "body") {
-        this._element = document.body;
-      } else {
-        this._element = document.createElement(this._tag) as HTMLInputElement;
-      }
-      
-      if (this._attributes) {
-        Object.entries(this._attributes).forEach(([key, value]: [string, any]) => {
-          if (key.startsWith('on') && typeof value === 'function') {
-            const eventName = key.slice(2).toLowerCase();
-            
-            this._element.addEventListener(eventName, value);
-          } else if (key === "disabled" && (value === false || value === undefined)) {
-            this._element.removeAttribute("disabled");
-          } else if (key === "checked" && (value === false || value === undefined)) {
-            this._element.removeAttribute("checked");
-          } else if (key === "value") {
-            (this._element as HTMLInputElement).value = value;
-          } else {
-            this._element.setAttribute(key, value);
-          }
-        });
-      }
-      
-      await this._appends(this._children);
+    if (this._element) {
+      return;
+    }
 
-      this._events.forEach(({ event, handler }) => {
-        this._element.addEventListener(event, handler);
+    if (this._tag === "body") {
+      this._element = document.body;
+    } else {
+      this._element = document.createElement(this._tag) as HTMLInputElement;
+    }
+    
+    if (this._attributes) {
+      Object.entries(this._attributes).forEach(([key, value]: [string, any]) => {
+        if (key.startsWith('on') && typeof value === 'function') {
+          const eventName = key.slice(2).toLowerCase();
+          
+          this._element.addEventListener(eventName, value);
+        } else if (key === "disabled" && (value === false || value === undefined)) {
+          this._element.removeAttribute("disabled");
+        } else if (key === "checked" && (value === false || value === undefined)) {
+          this._element.removeAttribute("checked");
+        } else if (key === "value") {
+          (this._element as HTMLInputElement).value = value;
+        } else {
+          this._element.setAttribute(key, value);
+        }
       });
     }
+    
+    await this._appends(this._children);
+
+    this._events.forEach(({ event, handler }) => {
+      this._element.addEventListener(event, handler);
+    });
   }
 
   on(event: string, handler: (e: any) => void) {
@@ -121,19 +123,19 @@ export class Element {
       const result = c();
       await result.render();
       await this._appendChildren(result);
-    } else if (c instanceof Farinel) {
-      const resolvedChild = await c.resolve();
+    // } else if (c instanceof Farinel) {
+      // const resolvedChild = await c.resolve();
 
-      if (resolvedChild instanceof Farinel) {
-        await resolvedChild.createRoot(this._element, resolvedChild);
-      }
-      else {
-        await resolvedChild.render();
+      // if (resolvedChild instanceof Farinel) {
+      //   await resolvedChild.createRoot(this._element, resolvedChild);
+      // }
+      // else {
+      //   await resolvedChild.render();
 
-        c.element = resolvedChild;
+      //   c.element = resolvedChild;
 
-        this._element.appendChild(resolvedChild._element);
-      }
+      //   this._element.appendChild(resolvedChild._element);
+      // }
     } else if (Array.isArray(c)) {
       await this._appends(c);
     } else if (c instanceof Element) {
