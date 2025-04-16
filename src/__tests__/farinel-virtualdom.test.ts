@@ -132,4 +132,58 @@ describe('Virtual Dom', () => {
     
     expect(element.html.outerHTML).toEqual('<div><p>Bye</p><form><p>Alice</p></form></div>');
   })
+
+  it('should patch children and add array of element', async () => {
+    const element = Div({}, 
+      P({}, 'Hello'),
+    );
+
+    const newSubelement = [
+      P({}, 'Tom'),
+      P({}, 'and Bob')
+    ];
+    const newElement = Div({}, 
+      P({}, 'Bye'),
+      newSubelement
+    );
+
+    await element.render();
+
+    expect(element.html.outerHTML).toEqual('<div><p>Hello</p></div>');
+
+    domContainer.appendChild(element.html);
+
+    await newElement.render();
+
+    element.patch(newElement);
+    
+    expect(element.html.outerHTML).toEqual('<div><p>Bye</p><p>Tom</p><p>and Bob</p></div>');
+  })
+
+  it('should patch children and add boolean element', async () => {
+    const element = Div({}, 
+      true && P({}, 'Hello'),
+    );
+
+    const newSubelement = [
+      P({}, 'Tom'),
+      P({}, 'and Bob')
+    ];
+    const newElement = Div({}, 
+      P({}, 'Bye'),
+      false && newSubelement
+    );
+
+    await element.render();
+
+    expect(element.html.outerHTML).toEqual('<div><p>Hello</p></div>');
+
+    domContainer.appendChild(element.html);
+
+    await newElement.render();
+
+    element.patch(newElement);
+    
+    expect(element.html.outerHTML).toEqual('<div><p>Bye</p></div>');
+  })
 })
