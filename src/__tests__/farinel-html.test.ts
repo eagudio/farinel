@@ -22,7 +22,7 @@ describe('Farinel with HTML elements', () => {
           counter: 0,
           loading: false
         }))
-        .otherwise(() => 
+        .rendering(() => 
           Div({}, 
             Div({}, `status: ${farinelInstance.state.loading ? 'loading' : 'ready'}`),
             Button({
@@ -42,7 +42,7 @@ describe('Farinel with HTML elements', () => {
         .stating(() => ({
           counter: 0,
         }))
-        .otherwise(() => 
+        .rendering(() => 
           Div({}, 
             Div({}, `counter: ${farinelInstance.state.counter}`),
             Button({}, "Increment")
@@ -59,7 +59,9 @@ describe('Farinel with HTML elements', () => {
       
       expect(domContainer.innerHTML).toContain('counter: 0');
       
-      const button = domContainer.querySelector('button') as HTMLButtonElement;
+      let button = domContainer.querySelector('button') as HTMLButtonElement;
+
+      expect(button.innerHTML).toContain('Increment');
 
       const stateUpdated = farinelInstance.spy();
       
@@ -68,6 +70,10 @@ describe('Farinel with HTML elements', () => {
       await stateUpdated;
       
       expect(domContainer.innerHTML).toContain('counter: 1');
+
+      button = domContainer.querySelector('button') as HTMLButtonElement;
+
+      expect(button.innerHTML).toContain('Increment');
     });
   });
 
@@ -77,7 +83,7 @@ describe('Farinel with HTML elements', () => {
         .stating(() => ({
           value: 0
         }))
-        .otherwise(() => 
+        .rendering(() => 
           Select({
             value: farinelInstance.state.value
           }, 
@@ -158,7 +164,7 @@ describe('Farinel with HTML elements', () => {
         .stating(() => ({
           value: 'test'
         }))
-        .otherwise(() => 
+        .rendering(() => 
           Input({
             type: 'text',
             value: farinelInstance.state.value
@@ -177,7 +183,7 @@ describe('Farinel with HTML elements', () => {
         .stating(() => ({
           value: ''
         }))
-        .otherwise(() => 
+        .rendering(() => 
           Input({
             type: 'text',
             value: farinelInstance.state.value
@@ -210,7 +216,7 @@ describe('Farinel with HTML elements', () => {
     it('should update state on click', async () => {
       const MyButton = () => farinel()
         .stating(() => ({}))
-        .otherwise(() => 
+        .rendering(() => 
           Button({}, 'Login')
             .on("click", async () => {
               await farinelInstance.dispatch({
@@ -378,22 +384,22 @@ describe('Farinel with HTML elements', () => {
     it('should correctly render deeply nested farinel elements', async () => {
       const LoginForm = ({
         text,
-        login,
+        showLogin,
       }: {
         text: string,
-        login?: boolean
+        showLogin: boolean
       }) => {
         const form: Farinel = farinel()
           .stating(() => ({
             loading: false
           }))
-          .when(() => form.state.loading === true, () =>
-            Button({ disabled: true }, 'Waiting...')
+          .when(() => showLogin === false, () =>
+            Button({}, text)
           )
           .otherwise(() =>
             Div({},
               P({}, 'Please login:'),
-              !login && Div({},
+              Div({},
                 Input({
                   type: 'text',
                   placeholder: 'Username'
@@ -403,7 +409,7 @@ describe('Farinel with HTML elements', () => {
                   placeholder: 'Password'
                 })
               ),
-              Button({}, text)
+              Button({ disabled: form.state.loading }, form.state.loading ? 'Waiting...' : text)
                 .on("click", async () => {
                   await form.dispatch({
                     loading: true
@@ -421,7 +427,7 @@ describe('Farinel with HTML elements', () => {
         return form;
       }
 
-      const loginForm = LoginForm({ text: 'Login', login: false });
+      const loginForm = LoginForm({ text: 'Login', showLogin: true });
 
       farinelInstance
         .stating(() => ({
@@ -430,7 +436,7 @@ describe('Farinel with HTML elements', () => {
         .when(() => farinelInstance.state.logged, () =>
           Div({},
             P({}, 'Welcome back!'),
-            LoginForm({ text: 'Logout', login: farinelInstance.state.logged })
+            LoginForm({ text: 'Logout', showLogin: !farinelInstance.state.logged })
           )
         )
         .otherwise(() => 
@@ -488,7 +494,7 @@ describe('Farinel with HTML elements', () => {
         .stating(() => ({
           loading: false,
         }))
-        .otherwise(() =>
+        .rendering(() =>
           Div({},
             Input({ type: 'email' })
               .on("input", (e: any) => loginPage.state.email = e.target.value),
@@ -513,7 +519,7 @@ describe('Farinel with HTML elements', () => {
 
       const Container = () => farinel()
         .stating(() => ({}))
-        .otherwise(() =>
+        .rendering(() =>
           loginPage
         );
 
@@ -525,7 +531,7 @@ describe('Farinel with HTML elements', () => {
         onLogout: () => void
       }) => farinel()
         .stating(() => ({}))
-        .otherwise(() =>
+        .rendering(() =>
           Div({}, 
             P({}, `Welcome ${user.name}!`),
             Button({}, "Logout")
