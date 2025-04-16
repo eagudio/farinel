@@ -1,4 +1,5 @@
 import { Element } from "../html";
+import { AppendArrayPatch } from "./appendarraypatch";
 import { AppendPatch } from "./appendpatch";
 import { Patch } from "./patch";
 import { PatchTree } from "./patchtree";
@@ -8,11 +9,15 @@ import { ReplacePatch } from "./replacepatch";
 import { TextPatch } from "./textpatch";
 
 export class Diff {
-  buildPatchTree(oldNode: Element | string | number | undefined | null, newNode: Element | string | number | undefined | null) {
+  buildPatchTree(oldNode: Element | Element[] | string | number | undefined | null, newNode: Element | Element[] | string | number | undefined | null) {
     const patchTree = new PatchTree();
 
     if (oldNode === null || oldNode === undefined) {
-      patchTree.patch = new AppendPatch(newNode as Element);
+      if (Array.isArray(newNode)) {
+        patchTree.patch = new AppendArrayPatch(newNode as Element[]);
+      } else {
+        patchTree.patch = new AppendPatch(newNode as Element);
+      }
 
       return patchTree;
     }
@@ -23,6 +28,7 @@ export class Diff {
       return patchTree;
     }
 
+    // TODO: da gestire il caso in cui venga appeso un boolean: deve appendere un testo vuoto
     if (typeof oldNode === 'string' || typeof oldNode === 'number') {
       if (oldNode !== newNode) {
         patchTree.patch = new TextPatch(newNode as string);  
@@ -36,22 +42,6 @@ export class Diff {
 
       return patchTree;
     }
-
-    // if (oldNode instanceof Farinel && newNode instanceof Farinel) {
-    //   if (!oldNode.element || !newNode.element) {
-    //     return patchTree;
-    //   }
-
-    //   if (oldNode.element.tag !== newNode.element.tag) {
-    //     patchTree.patch = new ReplacePatch(newNode.element as Element);
-
-    //     return patchTree;
-    //   }
-
-    //   patchTree.attributesPatch = new PropsPatch(this._diffAttributes(oldNode.element, newNode.element));
-
-    //   patchTree.childrenPatches = this._diffChildren(oldNode.element, newNode.element);
-    // }
 
     if (oldNode instanceof Element && newNode instanceof Element) {
       if (oldNode.tag !== newNode.tag) {

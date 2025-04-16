@@ -11,6 +11,10 @@ export class AppendPatch extends Patch {
   }
 
   applyTo(element: Element, parent: Element): void {
+    if (!this._element) {
+      return;
+    }
+
     parent.append(this._element);
   }
 }
