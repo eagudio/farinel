@@ -1,4 +1,3 @@
-import { Farinel } from "../farinel";
 import { Element } from "../html";
 import { AppendPatch } from "./appendpatch";
 import { Patch } from "./patch";

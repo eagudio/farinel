@@ -11,6 +11,6 @@ export class TextPatch extends Patch {
   }
 
   applyTo(element: Element, parent: Element): void {
-    parent.html.textContent = this._text;
+    parent.replaceText(this._text);
   }
 }

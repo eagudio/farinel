@@ -1,4 +1,3 @@
-import { Farinel } from "../farinel";
 import { Diff } from "./diff";
 
 export class Element {
@@ -38,8 +37,8 @@ export class Element {
     return this._tag;
   }
   
-  async render() {
-    if (this._element) {
+  async render(force: boolean = false) {
+    if (this._element && !force) {
       return;
     }
 
@@ -97,6 +96,11 @@ export class Element {
     this._events = newElement.events;
   }
 
+  replaceText(newText: string) {
+    this._element.textContent = newText;
+    this._children = [newText];
+  }
+
   append(newElement: Element) {
     this._element.appendChild(newElement.html);
     this._children.push(newElement);
@@ -119,23 +123,6 @@ export class Element {
   private async _appendChildren(c: any) {
     if (typeof c === "string") {
       this._element.appendChild(document.createTextNode(c));
-    } else if (typeof c === "function") {
-      const result = c();
-      await result.render();
-      await this._appendChildren(result);
-    // } else if (c instanceof Farinel) {
-      // const resolvedChild = await c.resolve();
-
-      // if (resolvedChild instanceof Farinel) {
-      //   await resolvedChild.createRoot(this._element, resolvedChild);
-      // }
-      // else {
-      //   await resolvedChild.render();
-
-      //   c.element = resolvedChild;
-
-      //   this._element.appendChild(resolvedChild._element);
-      // }
     } else if (Array.isArray(c)) {
       await this._appends(c);
     } else if (c instanceof Element) {

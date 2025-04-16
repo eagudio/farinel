@@ -46,8 +46,12 @@ export class Farinel extends Element {
     const element = await this._matcher;
 
     await element.render();
-
-    this.patch(element);
+    
+    if (element instanceof Farinel) {
+      this.replace(element);
+    } else {
+      this.patch(element);
+    }
   }
 
   rendering(handler: () => Promise<any> | any) {
