@@ -16,9 +16,21 @@ export class PropsPatch extends Patch {
       if (key.startsWith('on')) {
         const eventName = key.substring(2).toLowerCase();
         if (typeof value === 'function') {
-          element.html.addEventListener(eventName, value);
+          // attach and remember via Element helper so it can be removed later
+          // (this avoids creating anonymous handlers we can't remove)
+          if ((element as any).attachListener) {
+            (element as any).attachListener(eventName, value);
+          } else {
+            element.html.addEventListener(eventName, value);
+          }
         } else {
-          element.html.removeEventListener(eventName, () => {});
+          // remove previously attached prop listeners for this event
+          if ((element as any).detachPropListeners) {
+            (element as any).detachPropListeners(eventName);
+          } else {
+            // best-effort: remove a no-op listener (may not remove previously bound ones)
+            element.html.removeEventListener(eventName, () => {});
+          }
         }
       } else if (key === "disabled") {
         if (value === true) {

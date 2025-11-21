@@ -374,3 +374,42 @@ and more...
 ## License
 
 MIT
+
+## Bug Fixes and Improvements
+
+### Nested Children Rendering (v2.0.1+)
+
+Fixed a bug where nested arrays of children were not properly handled during rendering and patching. The virtual DOM now correctly flattens nested array structures in children:
+
+```typescript
+// This now works correctly:
+Div({}, 
+  [[Button({}, 'A'), Button({}, 'B')], 
+   [Button({}, 'C')]]  
+);
+// Renders as: <div><button>A</button><button>B</button><button>C</button></div>
+```
+
+#### What was fixed:
+
+1. **Array Flattening**: Children passed as nested arrays are automatically flattened to a single level
+2. **Boolean Normalization**: Boolean children (`true`/`false`) are converted to empty text nodes, consistent with render behavior
+3. **Event Handling on Nested Elements**: Event handlers now correctly attach to elements inside nested arrays
+4. **Patching Consistency**: The diff/patch algorithm now correctly compares and updates elements with normalized children structure
+
+#### Event Handler Cleanup (Props)
+
+Event handlers passed as props (e.g., `onClick`) that are removed during patch are now properly tracked and removed. The `attachListener` and `detachPropListeners` methods on Element ensure listeners don't leak.
+
+### Running Tests
+
+To verify the fixes and run the test suite:
+
+```bash
+npm test
+```
+
+Test files covering these fixes:
+- `src/__tests__/nested-events.test.ts` - Nested array rendering and event handling
+- `src/__tests__/events-update.test.ts` - Event handler prop removal  
+- `src/__tests__/list-reordering.test.ts` - List and array handling edge cases
