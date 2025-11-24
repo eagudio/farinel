@@ -6,11 +6,15 @@ export class Element {
   private _attributes: any;
   protected _children: any[] = [];
   private _events: any[] = [];
+  // map eventName -> array of handlers attached via props (so we can remove them)
+  private _attachedPropListeners: Record<string, EventListener[]> = {};
 
   constructor(tag: string, attributes: any, ...children: any[]) {
     this._tag = tag;
     this._attributes = attributes;
-    this._children = children;
+    // Normalize children: flatten nested arrays, convert booleans to empty strings,
+    // and keep null/undefined to let the diff logic handle removals.
+    this._children = this._normalizeChildren(children);
   }
 
   get html() {
@@ -52,8 +56,9 @@ export class Element {
       Object.entries(this._attributes).forEach(([key, value]: [string, any]) => {
         if (key.startsWith('on') && typeof value === 'function') {
           const eventName = key.slice(2).toLowerCase();
-          
-          this._element.addEventListener(eventName, value);
+
+          // attach and record the listener so it can be removed later if props change
+          this.attachListener(eventName, value);
         } else if (key === "disabled" && (value === false || value === undefined)) {
           this._element.removeAttribute("disabled");
         } else if (key === "checked" && (value === false || value === undefined)) {
@@ -77,6 +82,27 @@ export class Element {
     this._events.push({ event, handler });
     
     return this;
+  }
+
+  // Attach a listener coming from props (e.g. onClick) and remember it so we can remove later
+  attachListener(event: string, handler: EventListener) {
+    this._element.addEventListener(event, handler as EventListener);
+    if (!this._attachedPropListeners[event]) {
+      this._attachedPropListeners[event] = [];
+    }
+    this._attachedPropListeners[event].push(handler as EventListener);
+  }
+
+  // Remove all listeners previously attached via props for the given event
+  detachPropListeners(event: string) {
+    const listeners = this._attachedPropListeners[event];
+    if (!listeners || listeners.length === 0) return;
+
+    listeners.forEach((h) => {
+      this._element.removeEventListener(event, h);
+    });
+
+    this._attachedPropListeners[event] = [];
   }
 
   patch(newElement: Element) {
@@ -130,7 +156,29 @@ export class Element {
 
       this._element.appendChild(c._element);
     } else if (c === true || c === false) {
+      // boolean children are rendered as empty text nodes
       this._element.appendChild(document.createTextNode(""));
     }
   }
+
+  private _normalizeChildren(children: any[]): any[] {
+    const result: any[] = [];
+
+    for (const c of children) {
+      if (Array.isArray(c)) {
+        result.push(...this._normalizeChildren(c));
+      } else if (c === true || c === false) {
+        // represent booleans as empty strings so they become text nodes
+        result.push("");
+      } else if (c === null || c === undefined) {
+        // keep null/undefined to allow diff to consider removals/additions
+        result.push(c);
+      } else {
+        result.push(c);
+      }
+    }
+
+    return result;
+  }
+  
 }
