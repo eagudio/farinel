@@ -29,7 +29,7 @@ describe('Event handler prop updates via patch', () => {
     expect(handler).toHaveBeenCalledTimes(1);
 
     await newElement.render();
-    element.patch(newElement);
+    await element.patch(newElement);
 
     btn = domContainer.querySelector('button') as HTMLButtonElement;
     btn.click();

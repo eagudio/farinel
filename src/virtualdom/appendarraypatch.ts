@@ -10,9 +10,24 @@ export class AppendArrayPatch extends Patch {
     this._elements = elements;
   }
 
-  applyTo(element: Element, parent: Element): void {
-    this._elements.forEach(element => {
-      parent.append(element);
-    });
+  async applyTo(element: Element, parent: Element): Promise<void> {
+    // Se non c'è parent, non possiamo appendere
+    if (!parent || typeof parent !== 'object' || !('append' in parent)) {
+      return;
+    }
+
+    for (const el of this._elements) {
+      // Skip elementi null o undefined
+      if (!el) {
+        continue;
+      }
+
+      // Renderizzare se è un Element instance (non string o primitive)
+      if (typeof el === 'object' && 'render' in el) {
+        await el.render();
+      }
+      
+      parent.append(el);
+    }
   }
 }

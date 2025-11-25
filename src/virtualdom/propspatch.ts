@@ -11,6 +11,11 @@ export class PropsPatch extends Patch {
   }
 
   applyTo(element: Element): void {
+    // If element is undefined (e.g., conditional rendering), skip
+    if (!element || !element.html) {
+      return;
+    }
+    
     for (const key in this._props) {
       const value = this._props[key];
       if (key.startsWith('on')) {
@@ -45,7 +50,23 @@ export class PropsPatch extends Patch {
           element.html.removeAttribute("checked");
         }
       } else if (key === "value") {
-        (element.html as HTMLInputElement).value = value;
+        const inputElement = element.html as HTMLInputElement;
+        
+        // Preservare focus e posizione del cursore quando l'input ha il focus
+        const hadFocus = document.activeElement === inputElement;
+        const selectionStart = inputElement.selectionStart;
+        const selectionEnd = inputElement.selectionEnd;
+        
+        // Aggiornare il valore solo se diverso (evita reset del cursore)
+        if (inputElement.value !== value) {
+          inputElement.value = value;
+          
+          // Ripristinare focus e selezione se l'elemento aveva il focus
+          if (hadFocus && selectionStart !== null && selectionEnd !== null) {
+            inputElement.focus();
+            inputElement.setSelectionRange(selectionStart, selectionEnd);
+          }
+        }
       } else if (value === null || value === undefined) {
         element.html.removeAttribute(key);
       } else {

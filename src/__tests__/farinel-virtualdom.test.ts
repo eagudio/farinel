@@ -19,7 +19,7 @@ describe('Virtual Dom', () => {
     await element.render();
     await newElement.render();
 
-    element.patch(newElement);
+    await element.patch(newElement);
     
     expect(element.html.outerHTML).toEqual('<div>Bye...</div>');
   })
@@ -34,7 +34,7 @@ describe('Virtual Dom', () => {
 
     await newElement.render();
 
-    element.patch(newElement);
+    await element.patch(newElement);
     
     expect(element.html.outerHTML).toEqual('<p>Bye...</p>');
   })
@@ -55,7 +55,7 @@ describe('Virtual Dom', () => {
 
     await newElement.render();
 
-    element.patch(newElement);
+    await element.patch(newElement);
     
     expect(element.html.outerHTML).toEqual('<div><p>Hello</p><p>Alice</p></div>');
   })
@@ -77,7 +77,7 @@ describe('Virtual Dom', () => {
 
     await newElement.render();
 
-    element.patch(newElement);
+    await element.patch(newElement);
     
     expect(element.html.outerHTML).toEqual('<div><p>Hello</p><p>Alice</p><p>and Bob</p></div>');
   })
@@ -99,7 +99,7 @@ describe('Virtual Dom', () => {
 
     await newElement.render();
 
-    element.patch(newElement);
+    await element.patch(newElement);
     
     expect(element.html.outerHTML).toEqual('<div><p>Hello</p><p>Alice</p></div>');
   })
@@ -128,7 +128,7 @@ describe('Virtual Dom', () => {
 
     await newElement.render();
 
-    element.patch(newElement);
+    await element.patch(newElement);
     
     expect(element.html.outerHTML).toEqual('<div><p>Bye</p><form><p>Alice</p></form></div>');
   })
@@ -155,7 +155,7 @@ describe('Virtual Dom', () => {
 
     await newElement.render();
 
-    element.patch(newElement);
+    await element.patch(newElement);
     
     expect(element.html.outerHTML).toEqual('<div><p>Bye</p><p>Tom</p><p>and Bob</p></div>');
   })
@@ -182,7 +182,7 @@ describe('Virtual Dom', () => {
 
     await newElement.render();
 
-    element.patch(newElement);
+    await element.patch(newElement);
     
     expect(element.html.outerHTML).toEqual('<div><p>Bye</p></div>');
   })

@@ -75,7 +75,7 @@ export class Farinel extends Element {
     if (element instanceof Farinel) {
       this.replace(element);
     } else {
-      this.patch(element);
+      await this.patch(element);
     }
 
     // Signal that the first render is complete (resolves any waiting dispatches)

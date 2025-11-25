@@ -26,7 +26,7 @@ describe('List reordering and edge cases', () => {
     expect(domContainer.querySelectorAll('li').length).toBe(2);
 
     await list2.render();
-    list1.patch(list2);
+    await list1.patch(list2);
 
     expect(domContainer.querySelectorAll('li').length).toBe(3);
     expect(domContainer.innerHTML).toContain('Item 3');

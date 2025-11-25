@@ -21,7 +21,7 @@ describe('Nested arrays and events', () => {
 
     await newElement.render();
 
-    element.patch(newElement);
+    await element.patch(newElement);
 
     expect(element.html.outerHTML).toEqual('<div><p>X</p><p>Y</p></div>');
   });

@@ -105,15 +105,33 @@ export class Element {
     this._attachedPropListeners[event] = [];
   }
 
-  patch(newElement: Element) {
+  async patch(newElement: Element) {
+    // Verificare che this sia stato renderizzato
+    if (!this._element) {
+      // Se non è stato renderizzato, renderizzalo prima
+      await this.render();
+    }
+
     const diff = new Diff();
-
     const patchTree = diff.buildPatchTree(this, newElement);
-
-    patchTree.applyTo(this);
+    await patchTree.applyTo(this);
   }
 
   replace(newElement: Element) {
+    // Verificare che this._element esista
+    if (!this._element) {
+      // Questo può succedere con rendering condizionale
+      // Invece di throw, log warning e return gracefully
+      console.warn('[Element.replace] Attempting to replace unrendered element - skipping');
+      return;
+    }
+    
+    // Verificare che newElement sia valido
+    if (!newElement || !newElement.html) {
+      console.warn('[Element.replace] Attempting to replace with invalid element - skipping');
+      return;
+    }
+    
     this._element.replaceWith(newElement.html);
     this._element = newElement.html;
     this._tag = newElement.tag;
