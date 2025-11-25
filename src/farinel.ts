@@ -78,7 +78,7 @@ export class Farinel extends Element {
       this.patch(element);
     }
 
-    // Signal that the first render is complete if this is the first render
+    // Signal that the first render is complete (resolves any waiting dispatches)
     if (this._renderResolver) {
       this._renderResolver();
       this._renderResolver = null;
