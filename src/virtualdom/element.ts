@@ -117,18 +117,39 @@ export class Element {
     await patchTree.applyTo(this);
   }
 
-  replace(newElement: Element) {
+  replace(newElement: Element | string | number | boolean | null | undefined) {
+    // Gestire elementi primitivi o null/undefined
+    if (newElement === null || newElement === undefined || newElement === false) {
+      // Se newElement è null/false/undefined, rimuovere l'elemento corrente
+      if (this._element && this._element.parentNode) {
+        this._element.remove();
+        this._element = undefined as any;
+      }
+      return;
+    }
+    
+    // Convertire primitivi in text node
+    if (typeof newElement === 'string' || typeof newElement === 'number' || typeof newElement === 'boolean') {
+      if (this._element) {
+        const textValue = typeof newElement === 'boolean' ? '' : String(newElement);
+        this._element.textContent = textValue;
+      }
+      return;
+    }
+    
     // Verificare che this._element esista
     if (!this._element) {
       // Questo può succedere con rendering condizionale
-      // Invece di throw, log warning e return gracefully
       console.warn('[Element.replace] Attempting to replace unrendered element - skipping');
       return;
     }
     
-    // Verificare che newElement sia valido
+    // newElement è un Element - verificare che sia valido e renderizzato
     if (!newElement || !newElement.html) {
-      console.warn('[Element.replace] Attempting to replace with invalid element - skipping');
+      console.warn('[Element.replace] Attempting to replace with invalid/unrendered element - skipping', {
+        hasNewElement: !!newElement,
+        hasHtml: newElement ? !!newElement.html : false
+      });
       return;
     }
     

@@ -268,5 +268,6 @@ describe('Conditional Rendering', () => {
     expect(domContainer.innerHTML).toContain('Step 1');
     expect(domContainer.innerHTML).not.toContain('Step 3');
   });
+
 });
 

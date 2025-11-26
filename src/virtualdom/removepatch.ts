@@ -2,10 +2,17 @@ import { Element } from "../html";
 import { Patch } from "./patch";
 
 export class RemovePatch extends Patch {
-  applyTo(element: Element, parent: Element): void {
+  async applyTo(element: Element, parent: Element): Promise<void> {
     if (!element) {
       return;
     }
-    element.remove();
+    
+    // Verificare che l'elemento abbia il metodo remove
+    if (typeof element.remove === 'function') {
+      element.remove();
+    } else if (element.html && element.html.parentNode) {
+      // Se element è un Element virtuale, rimuovere l'html
+      element.html.parentNode.removeChild(element.html);
+    }
   }
 }

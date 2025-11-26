@@ -104,19 +104,31 @@ export class Diff {
   private _diffChildren(oldNode: Element, newNode: Element): any {
     const childrenPatches: Patch[] = [];
     
+    // Filtrare children null/undefined/false (rendering condizionale)
+    const filterValidChildren = (children: any[]) => {
+      return children.filter(child => 
+        child !== null && 
+        child !== undefined && 
+        child !== false
+      );
+    };
+    
+    const oldChildren = filterValidChildren(oldNode.children || []);
+    const newChildren = filterValidChildren(newNode.children || []);
+    
     // Creare mappe per key-based matching
     const oldKeyed: Map<string, { element: any, index: number }> = new Map();
     const newKeyed: Map<string, { element: any, index: number }> = new Map();
     
     // Raccogliere elementi con chiavi
-    oldNode.children.forEach((child, index) => {
+    oldChildren.forEach((child, index) => {
       const key = this._getElementKey(child);
       if (key) {
         oldKeyed.set(key, { element: child, index });
       }
     });
     
-    newNode.children.forEach((child, index) => {
+    newChildren.forEach((child, index) => {
       const key = this._getElementKey(child);
       if (key) {
         newKeyed.set(key, { element: child, index });
@@ -124,11 +136,11 @@ export class Diff {
     });
     
     // Fare matching key-based first, poi posizionale
-    const maxLength = Math.max(oldNode.children.length, newNode.children.length);
+    const maxLength = Math.max(oldChildren.length, newChildren.length);
     
     for (let index = 0; index < maxLength; index++) {
-      const oldChild = index < oldNode.children.length ? oldNode.children[index] : null;
-      const newChild = index < newNode.children.length ? newNode.children[index] : null;
+      const oldChild = index < oldChildren.length ? oldChildren[index] : null;
+      const newChild = index < newChildren.length ? newChildren[index] : null;
       
       // Se entrambi hanno key, verificare se matchano
       const oldKey = oldChild ? this._getElementKey(oldChild) : null;
