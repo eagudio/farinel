@@ -31,7 +31,18 @@ export class ReplacePatch extends Patch {
     
     // Sostituire solo se element è valido
     if (element && typeof element === 'object' && 'replace' in element) {
-      element.replace(this._element);
+      // Verificare se element.html è nel DOM
+      if (element.html && element.html.parentNode) {
+        // Element è nel DOM - usare replace normale
+        element.replace(this._element);
+      } else if (parent && typeof parent === 'object' && 'append' in parent) {
+        // Element non è nel DOM ma abbiamo un parent - append al parent
+        parent.append(this._element);
+      } else {
+        // Element non è nel DOM e non abbiamo parent - provare replace comunque
+        // (potrebbe funzionare se l'elemento verrà aggiunto al DOM in seguito)
+        element.replace(this._element);
+      }
     }
   }
 }

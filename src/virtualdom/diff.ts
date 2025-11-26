@@ -104,73 +104,118 @@ export class Diff {
   private _diffChildren(oldNode: Element, newNode: Element): any {
     const childrenPatches: Patch[] = [];
     
-    // Filtrare children null/undefined/false (rendering condizionale)
-    const filterValidChildren = (children: any[]) => {
-      return children.filter(child => 
-        child !== null && 
-        child !== undefined && 
-        child !== false
-      );
-    };
+    const oldChildren = oldNode.children || [];
+    const newChildren = newNode.children || [];
     
-    const oldChildren = filterValidChildren(oldNode.children || []);
-    const newChildren = filterValidChildren(newNode.children || []);
+    // Strategia: gestire separatamente elementi con key ed elementi senza key
+    // Gli elementi con key vengono matchati per key indipendentemente dalla posizione
+    // Gli elementi senza key vengono matchati posizionalmente
     
-    // Creare mappe per key-based matching
-    const oldKeyed: Map<string, { element: any, index: number }> = new Map();
-    const newKeyed: Map<string, { element: any, index: number }> = new Map();
+    // Raccogliere elementi con key
+    const oldKeyed: Map<string, { element: any, originalIndex: number }> = new Map();
+    const newKeyed: Map<string, { element: any, originalIndex: number }> = new Map();
+    const oldProcessed: Set<number> = new Set();
+    const newProcessed: Set<number> = new Set();
     
-    // Raccogliere elementi con chiavi
     oldChildren.forEach((child, index) => {
-      const key = this._getElementKey(child);
-      if (key) {
-        oldKeyed.set(key, { element: child, index });
+      if (child !== null && child !== undefined && child !== false) {
+        const key = this._getElementKey(child);
+        if (key) {
+          oldKeyed.set(key, { element: child, originalIndex: index });
+        }
       }
     });
     
     newChildren.forEach((child, index) => {
-      const key = this._getElementKey(child);
-      if (key) {
-        newKeyed.set(key, { element: child, index });
+      if (child !== null && child !== undefined && child !== false) {
+        const key = this._getElementKey(child);
+        if (key) {
+          newKeyed.set(key, { element: child, originalIndex: index });
+        }
       }
     });
     
-    // Fare matching key-based first, poi posizionale
+    // 1. FASE KEY-BASED: Processare elementi con key
+    // Per ogni posizione, se c'è un elemento con key, gestirlo in modo key-based
     const maxLength = Math.max(oldChildren.length, newChildren.length);
     
     for (let index = 0; index < maxLength; index++) {
-      const oldChild = index < oldChildren.length ? oldChildren[index] : null;
-      const newChild = index < newChildren.length ? newChildren[index] : null;
+      const oldChild = index < oldChildren.length ? oldChildren[index] : undefined;
+      const newChild = index < newChildren.length ? newChildren[index] : undefined;
       
-      // Se entrambi hanno key, verificare se matchano
-      const oldKey = oldChild ? this._getElementKey(oldChild) : null;
-      const newKey = newChild ? this._getElementKey(newChild) : null;
+      const oldKey = (oldChild && oldChild !== false && oldChild !== null) ? this._getElementKey(oldChild) : null;
+      const newKey = (newChild && newChild !== false && newChild !== null) ? this._getElementKey(newChild) : null;
       
+      // CASO 1: Entrambi hanno key alla stessa posizione
       if (oldKey && newKey) {
-        // Entrambi hanno key
         if (oldKey === newKey) {
-          // Stesso elemento, fare patch
+          // Stesso elemento - patch
           childrenPatches.push(this.buildPatchTree(oldChild, newChild));
         } else {
-          // Key diverse, verificare se il new element esisteva prima
-          const oldMatch = oldKeyed.get(newKey);
-          if (oldMatch) {
-            // L'elemento è stato spostato, fare patch
-            childrenPatches.push(this.buildPatchTree(oldMatch.element, newChild));
+          // Key diverse - sostituire completamente
+          childrenPatches.push(this.buildPatchTree(oldChild, newChild));
+        }
+        oldProcessed.add(index);
+        newProcessed.add(index);
+      }
+      // CASO 2: Solo oldChild ha key
+      else if (oldKey && !newKey) {
+        // Verificare se questo oldChild esiste ancora in newChildren
+        if (newKeyed.has(oldKey)) {
+          // Esiste ancora, ma in una posizione diversa - non processare qui
+          // Verrà gestito quando incontreremo la nuova posizione
+        } else {
+          // Non esiste più - rimuovere
+          if (oldChild === null || oldChild === undefined || oldChild === false) {
+            // Se newChild è anche null/undefined/false, nessun cambiamento
+            if (newChild === null || newChild === undefined || newChild === false) {
+              childrenPatches.push(this.buildPatchTree(null, null));
+            } else {
+              // newChild esiste ma senza key - sostituire
+              childrenPatches.push(this.buildPatchTree(oldChild, newChild));
+            }
           } else {
-            // Nuovo elemento
+            if (newChild === null || newChild === undefined || newChild === false) {
+              // Rimuovere oldChild
+              childrenPatches.push(this.buildPatchTree(oldChild, null));
+            } else {
+              // Sostituire con newChild
+              childrenPatches.push(this.buildPatchTree(oldChild, newChild));
+            }
+          }
+          oldProcessed.add(index);
+          newProcessed.add(index);
+        }
+      }
+      // CASO 3: Solo newChild ha key
+      else if (!oldKey && newKey) {
+        // Verificare se questo newChild esisteva già in oldChildren
+        if (oldKeyed.has(newKey)) {
+          // Esisteva, ma in una posizione diversa
+          const oldMatch = oldKeyed.get(newKey)!;
+          // Patch tra l'old e il new
+          childrenPatches.push(this.buildPatchTree(oldMatch.element, newChild));
+          oldProcessed.add(oldMatch.originalIndex);
+        } else {
+          // È un elemento completamente nuovo
+          if (oldChild === null || oldChild === undefined || oldChild === false) {
+            // Aggiungere
             childrenPatches.push(this.buildPatchTree(null, newChild));
+          } else {
+            // Sostituire oldChild senza key con newChild con key
+            childrenPatches.push(this.buildPatchTree(oldChild, newChild));
           }
         }
-      } else if (oldChild && newChild) {
-        // Nessuna key, match posizionale tradizionale
+        newProcessed.add(index);
+        if (index < oldChildren.length) {
+          oldProcessed.add(index);
+        }
+      }
+      // CASO 4: Nessuno dei due ha key - matching posizionale tradizionale
+      else {
         childrenPatches.push(this.buildPatchTree(oldChild, newChild));
-      } else if (oldChild) {
-        // Elemento rimosso
-        childrenPatches.push(this.buildPatchTree(oldChild, null));
-      } else if (newChild) {
-        // Nuovo elemento
-        childrenPatches.push(this.buildPatchTree(null, newChild));
+        oldProcessed.add(index);
+        newProcessed.add(index);
       }
     }
     
