@@ -9,7 +9,7 @@ import { ReplacePatch } from "./replacepatch";
 import { TextPatch } from "./textpatch";
 
 export class Diff {
-  buildPatchTree(oldNode: Element | Element[] | string | number | boolean | undefined | null, newNode: Element | Element[] | string | number | boolean | undefined | null) {
+  buildPatchTree(oldNode: Element | Element[] | string | number | boolean | undefined | null, newNode: Element | Element[] | string | number | boolean | undefined | null, depth: number = 0) {
     const patchTree = new PatchTree();
 
     // Se oldNode non esiste (null/undefined), dobbiamo aggiungere newNode
@@ -77,7 +77,7 @@ export class Diff {
 
       patchTree.attributesPatch = new PropsPatch(this._diffAttributes(oldNode, newNode));
 
-      patchTree.childrenPatches = this._diffChildren(oldNode, newNode);
+      patchTree.childrenPatches = this._diffChildren(oldNode, newNode, depth);
     }
 
     return patchTree;
@@ -101,7 +101,7 @@ export class Diff {
     return attributes;
   }
 
-  private _diffChildren(oldNode: Element, newNode: Element): any {
+  private _diffChildren(oldNode: Element, newNode: Element, depth: number = 0): any {
     const childrenPatches: Patch[] = [];
     
     const oldChildren = oldNode.children || [];
@@ -150,10 +150,10 @@ export class Diff {
       if (oldKey && newKey) {
         if (oldKey === newKey) {
           // Stesso elemento - patch
-          childrenPatches.push(this.buildPatchTree(oldChild, newChild));
+          childrenPatches.push(this.buildPatchTree(oldChild, newChild, depth + 1));
         } else {
           // Key diverse - sostituire completamente
-          childrenPatches.push(this.buildPatchTree(oldChild, newChild));
+          childrenPatches.push(this.buildPatchTree(oldChild, newChild, depth + 1));
         }
         oldProcessed.add(index);
         newProcessed.add(index);
@@ -169,18 +169,18 @@ export class Diff {
           if (oldChild === null || oldChild === undefined || oldChild === false) {
             // Se newChild è anche null/undefined/false, nessun cambiamento
             if (newChild === null || newChild === undefined || newChild === false) {
-              childrenPatches.push(this.buildPatchTree(null, null));
+              childrenPatches.push(this.buildPatchTree(null, null, depth + 1));
             } else {
               // newChild esiste ma senza key - sostituire
-              childrenPatches.push(this.buildPatchTree(oldChild, newChild));
+              childrenPatches.push(this.buildPatchTree(oldChild, newChild, depth + 1));
             }
           } else {
             if (newChild === null || newChild === undefined || newChild === false) {
               // Rimuovere oldChild
-              childrenPatches.push(this.buildPatchTree(oldChild, null));
+              childrenPatches.push(this.buildPatchTree(oldChild, null, depth + 1));
             } else {
               // Sostituire con newChild
-              childrenPatches.push(this.buildPatchTree(oldChild, newChild));
+              childrenPatches.push(this.buildPatchTree(oldChild, newChild, depth + 1));
             }
           }
           oldProcessed.add(index);
@@ -194,16 +194,16 @@ export class Diff {
           // Esisteva, ma in una posizione diversa
           const oldMatch = oldKeyed.get(newKey)!;
           // Patch tra l'old e il new
-          childrenPatches.push(this.buildPatchTree(oldMatch.element, newChild));
+          childrenPatches.push(this.buildPatchTree(oldMatch.element, newChild, depth + 1));
           oldProcessed.add(oldMatch.originalIndex);
         } else {
           // È un elemento completamente nuovo
           if (oldChild === null || oldChild === undefined || oldChild === false) {
             // Aggiungere
-            childrenPatches.push(this.buildPatchTree(null, newChild));
+            childrenPatches.push(this.buildPatchTree(null, newChild, depth + 1));
           } else {
             // Sostituire oldChild senza key con newChild con key
-            childrenPatches.push(this.buildPatchTree(oldChild, newChild));
+            childrenPatches.push(this.buildPatchTree(oldChild, newChild, depth + 1));
           }
         }
         newProcessed.add(index);
@@ -213,7 +213,7 @@ export class Diff {
       }
       // CASO 4: Nessuno dei due ha key - matching posizionale tradizionale
       else {
-        childrenPatches.push(this.buildPatchTree(oldChild, newChild));
+        childrenPatches.push(this.buildPatchTree(oldChild, newChild, depth + 1));
         oldProcessed.add(index);
         newProcessed.add(index);
       }

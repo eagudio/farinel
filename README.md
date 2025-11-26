@@ -174,26 +174,28 @@ const LoginForm = () => {
           value: form.state.email,
           disabled: form.state.loading
         })
-          .on("input", async (e) => {
-            await form.dispatch({
-              email: e.target.value
-            });
+          .on("input", (e) => {
+            // Update state directly to preserve focus
+            form.state.email = e.target.value;
           }),
         Input({
           type: 'password',
           value: form.state.password,
           disabled: form.state.loading
         })
-          .on("input", async (e) => {
-            await form.dispatch({
-              password: e.target.value
-            });
+          .on("input", (e) => {
+            // Update state directly to preserve focus
+            form.state.password = e.target.value;
           }),
         Button({
           disabled: form.state.loading
         }, "Login")
           .on("click", async () => {
-            await form.dispatch({ loading: true });
+            // Dispatch only on submit, not on every keystroke
+            await form.dispatch({ 
+              ...form.state,
+              loading: true 
+            });
             // ... handle login
           })
       )
@@ -245,36 +247,37 @@ const LoginPage = () => {
             value: loginPage.state.email,
             disabled: loginPage.state.loading
           })
-            .on("input", async (e) => {
-              await loginPage.dispatch({
-                email: e.target.value,
-                error: null
-              });
+            .on("input", (e) => {
+              loginPage.state.email = e.target.value;
+              loginPage.state.error = null;
             }),
           Input({
             type: 'password',
             value: loginPage.state.password,
             disabled: loginPage.state.loading
           })
-            .on("input", async (e) => {
-              await loginPage.dispatch({
-                password: e.target.value,
-                error: null
-              });
+            .on("input", (e) => {
+              loginPage.state.password = e.target.value;
+              loginPage.state.error = null;
             }),
           Button({
             disabled: loginPage.state.loading
           }, "Login")
             .on("click", async () => {
-              await loginPage.dispatch({ loading: true });
+              await loginPage.dispatch({ 
+                ...loginPage.state,
+                loading: true 
+              });
               try {
                 // ... handle login
                 await loginPage.dispatch({ 
+                  ...loginPage.state,
                   loading: false,
                   error: null
                 });
               } catch (error) {
                 await loginPage.dispatch({ 
+                  ...loginPage.state,
                   loading: false,
                   error: error.message
                 });
@@ -291,36 +294,37 @@ const LoginPage = () => {
             value: loginPage.state.email,
             disabled: loginPage.state.loading
           })
-            .on("input", async (e) => {
-              await loginPage.dispatch({
-                email: e.target.value,
-                error: null
-              });
+            .on("input", (e) => {
+              loginPage.state.email = e.target.value;
+              loginPage.state.error = null;
             }),
           Input({
             type: 'password',
             value: loginPage.state.password,
             disabled: loginPage.state.loading
           })
-            .on("input", async (e) => {
-              await loginPage.dispatch({
-                password: e.target.value,
-                error: null
-              });
+            .on("input", (e) => {
+              loginPage.state.password = e.target.value;
+              loginPage.state.error = null;
             }),
           Button({
             disabled: loginPage.state.loading
           }, "Login")
             .on("click", async () => {
-              await loginPage.dispatch({ loading: true });
+              await loginPage.dispatch({ 
+                ...loginPage.state,
+                loading: true 
+              });
               try {
                 // ... handle login
                 await loginPage.dispatch({ 
+                  ...loginPage.state,
                   loading: false,
                   error: null
                 });
               } catch (error) {
                 await loginPage.dispatch({ 
+                  ...loginPage.state,
                   loading: false,
                   error: error.message
                 });
@@ -371,9 +375,112 @@ App();
 
 and more...
 
+## Best Practices
+
+### Conditional Rendering
+
+**Always use ternary operators with `null` for conditional rendering**, not logical AND (`&&`) operators:
+
+```typescript
+// ✅ CORRECT - Use ternary operator
+state.showModal ? Div({}, "Modal content") : null
+
+// ❌ WRONG - Using && can cause rendering issues
+state.showModal && Div({}, "Modal content")  // Returns false when condition is false
+```
+
+**Why?** When using `&&`, JavaScript returns `false` when the condition is false. Farinel normalizes `false` to an empty string `''`, which corrupts the children array structure and breaks the diffing algorithm. Using ternary operators with `: null` ensures proper handling of conditional elements.
+
+### Input Focus Preservation
+
+**For text inputs, avoid calling `dispatch()` on every keystroke**. Instead, update state directly:
+
+```typescript
+// ✅ CORRECT - Direct state update preserves focus
+Input({ value: component.state.text })
+  .on("input", (e) => {
+    component.state.text = e.target.value;  // No re-render
+  })
+
+// ❌ WRONG - Dispatch on every keystroke loses focus
+Input({ value: component.state.text })
+  .on("input", async (e) => {
+    await component.dispatch({ text: e.target.value });  // Re-renders, loses focus
+  })
+```
+
+**Why?** Calling `dispatch()` triggers a full re-render and diff/patch cycle. Farinel's `PropsPatch` automatically preserves input focus, but only if the input element is patched, not replaced. Direct state updates avoid unnecessary re-renders while typing.
+
+### Multi-Step Forms and Conditional Steps
+
+**Use unique `key` attributes for conditional elements** to help Farinel's diffing algorithm:
+
+```typescript
+state.step === 1 ? Div({ key: 'step-1' }, 
+  // Step 1 content
+) : null,
+
+state.step === 2 ? Div({ key: 'step-2' }, 
+  // Step 2 content
+) : null
+```
+
+**Why?** Keys enable identity-based diffing, allowing Farinel to correctly track which elements are added, removed, or moved, rather than relying on positional matching.
+
 ## License
 
 MIT
+
+## Changelog
+
+### v2.3.0 (2025-11-26)
+
+**Major Improvements:**
+
+- **Robust Null/Undefined Handling**: Conditional rendering with `null`/`undefined` now uses comment placeholders (`document.createComment("placeholder")`) to maintain consistent DOM structure and prevent index mismatches during patching
+- **Input Focus Preservation**: Enhanced `PropsPatch` to automatically preserve input focus and cursor position during patches, eliminating focus loss issues
+- **Key-Based Diffing**: Implemented identity-based diffing using `id` and `key` attributes, enabling efficient updates for lists, conditional elements, and multi-step forms
+- **Direct State Updates**: Components can now update `component.state` directly without triggering re-renders, useful for form inputs and frequent state changes
+- **Improved Conditional Rendering**: Better handling of ternary operators and `null` children in the virtual DOM
+- **Enhanced Patch Robustness**: All patch types now gracefully handle missing or undefined elements common in conditional rendering scenarios
+
+**Breaking Changes:**
+- None - fully backward compatible
+
+**Best Practices Added:**
+- Use ternary operators (`: null`) instead of `&&` for conditional rendering
+- Update input state directly to preserve focus during typing
+- Use `key` attributes for conditional/dynamic elements
+
+### v2.4.0
+
+**Reactivity Improvements:**
+
+- Fixed `.otherwise()` reactivity with state changes
+- Direct template execution in `dispatch()` for better performance
+
+### v2.3.0
+
+**Conditional Rendering:**
+
+- Enhanced handling of `null`/`undefined` children
+- Improved element replacement logic for comment nodes
+
+### v2.2.0
+
+**Key-Based Diffing:**
+
+- Implemented identity-based diffing using `id` and `key` attributes
+- Automatic input focus and cursor position preservation in `PropsPatch`
+
+### v2.1.0
+
+**Auto-Wait Mechanism:**
+
+- `dispatch()` now automatically waits for component mount before executing
+- Prevents "Element not found" errors when calling dispatch early in component lifecycle
+
+### v2.0.1+
 
 ## Bug Fixes and Improvements
 

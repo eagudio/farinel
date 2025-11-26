@@ -5,6 +5,7 @@ export class Element {
   private _tag: string = "";
   private _attributes: any;
   protected _children: any[] = [];
+  protected _childNodes: Node[] = []; // Track actual DOM nodes for each child (including placeholders)
   private _events: any[] = [];
   // map eventName -> array of handlers attached via props (so we can remove them)
   private _attachedPropListeners: Record<string, EventListener[]> = {};
@@ -118,42 +119,52 @@ export class Element {
   }
 
   replace(newElement: Element | string | number | boolean | null | undefined) {
-    // Gestire elementi primitivi o null/undefined
+    // Handle null/undefined/false - replace with comment placeholder to maintain alignment
     if (newElement === null || newElement === undefined || newElement === false) {
-      // Se newElement è null/false/undefined, rimuovere l'elemento corrente
       if (this._element && this._element.parentNode) {
-        this._element.remove();
-        this._element = undefined as any;
+        const placeholder = document.createComment("placeholder");
+        this._element.parentNode.replaceChild(placeholder, this._element);
+        this._element = placeholder as any;
       }
       return;
     }
     
-    // Convertire primitivi in text node
+    // Convert primitives to text node
     if (typeof newElement === 'string' || typeof newElement === 'number' || typeof newElement === 'boolean') {
       if (this._element) {
         const textValue = typeof newElement === 'boolean' ? '' : String(newElement);
-        this._element.textContent = textValue;
+        // If current element is a comment placeholder, replace with text node
+        if (this._element.nodeType === Node.COMMENT_NODE && this._element.parentNode) {
+          const textNode = document.createTextNode(textValue);
+          this._element.parentNode.replaceChild(textNode, this._element);
+          this._element = textNode as any;
+        } else {
+          this._element.textContent = textValue;
+        }
       }
       return;
     }
     
-    // Verificare che this._element esista
+    // Verify that this._element exists
     if (!this._element) {
-      // Questo può succedere con rendering condizionale
-      console.warn('[Element.replace] Attempting to replace unrendered element - skipping');
+      // This can happen with conditional rendering
       return;
     }
     
-    // newElement è un Element - verificare che sia valido e renderizzato
+    // newElement is an Element - verify it's valid and rendered
     if (!newElement || !newElement.html) {
-      console.warn('[Element.replace] Attempting to replace with invalid/unrendered element - skipping', {
-        hasNewElement: !!newElement,
-        hasHtml: newElement ? !!newElement.html : false
-      });
       return;
     }
     
-    this._element.replaceWith(newElement.html);
+    // Replace current element (which might be a comment placeholder) with new Element
+    if (this._element.nodeType === Node.COMMENT_NODE && this._element.parentNode) {
+      // Current element is a comment placeholder - replace it with the new Element
+      this._element.parentNode.replaceChild(newElement.html, this._element);
+    } else {
+      // Normal element replacement
+      this._element.replaceWith(newElement.html);
+    }
+    
     this._element = newElement.html;
     this._tag = newElement.tag;
     this._attributes = newElement.attributes;
@@ -166,8 +177,17 @@ export class Element {
     this._children = [newText];
   }
 
-  append(newElement: Element) {
-    this._element.appendChild(newElement.html);
+  append(newElement: Element | string | number | boolean | null | undefined) {
+    if (newElement instanceof Element) {
+      this._element.appendChild(newElement.html);
+    } else if (typeof newElement === "string" || typeof newElement === "number") {
+      this._element.appendChild(document.createTextNode(String(newElement)));
+    } else if (newElement === true || newElement === false) {
+      this._element.appendChild(document.createTextNode(""));
+    } else if (newElement === null || newElement === undefined) {
+      // Use comment node as placeholder
+      this._element.appendChild(document.createComment("placeholder"));
+    }
     this._children.push(newElement);
   }
 
@@ -186,17 +206,36 @@ export class Element {
   }
 
   private async _appendChildren(c: any) {
-    if (typeof c === "string") {
-      this._element.appendChild(document.createTextNode(c));
+    let domNode: Node;
+    
+    if (typeof c === "string" || typeof c === "number") {
+      domNode = document.createTextNode(String(c));
+      this._element.appendChild(domNode);
     } else if (Array.isArray(c)) {
       await this._appends(c);
+      return; // Arrays don't add a single node
     } else if (c instanceof Element) {
       await c.render();
-
+      domNode = c._element;
       this._element.appendChild(c._element);
     } else if (c === true || c === false) {
       // boolean children are rendered as empty text nodes
-      this._element.appendChild(document.createTextNode(""));
+      domNode = document.createTextNode("");
+      this._element.appendChild(domNode);
+    } else if (c === null || c === undefined) {
+      // Use a comment node as placeholder for null/undefined children
+      // This maintains index alignment between virtual children and DOM nodes
+      domNode = document.createComment("placeholder");
+      this._element.appendChild(domNode);
+    } else {
+      // Unknown type - use comment placeholder
+      domNode = document.createComment("unknown");
+      this._element.appendChild(domNode);
+    }
+    
+    // Track the DOM node for this child
+    if (domNode!) {
+      this._childNodes.push(domNode);
     }
   }
 
@@ -210,7 +249,7 @@ export class Element {
         // represent booleans as empty strings so they become text nodes
         result.push("");
       } else if (c === null || c === undefined) {
-        // keep null/undefined to allow diff to consider removals/additions
+        // Keep null/undefined - they will be rendered as comment placeholders
         result.push(c);
       } else {
         result.push(c);

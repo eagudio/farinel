@@ -8,6 +8,10 @@ export class Farinel extends Element {
   private _inform: any = () => {};
   private _renderPromise: Promise<void> | null = null;
   private _renderResolver: (() => void) | null = null;
+  private _templateHandler: (() => Promise<any> | any) | null = null;
+  private _currentState: any = {};
+  private _hasOnlyOtherwise: boolean = true; // Track if we're using only .otherwise()
+  private _renderedElement: Element | null = null; // Track the last rendered element for patching
 
   constructor() {
     super('div', {});
@@ -22,7 +26,7 @@ export class Farinel extends Element {
   }
 
   get state() {
-    return this._matcher.context.value;
+    return this._currentState;
   }
 
   async createRoot(container: HTMLElement, farinel: Farinel) {
@@ -52,13 +56,30 @@ export class Farinel extends Element {
       // Note: Promise is set to null in render() after first render completes
     }
     
-    if (!this._matcher.context.returnValue) {
+    // Only check returnValue if we haven't rendered yet (for pattern matching cases)
+    if (!this._renderedElement && !this._matcher.context.returnValue) {
       throw new Error("Element not found");
     }
     
     this._stating = async(state: any) => Promise.resolve(newState);
+    
+    // Save the new state
+    this._currentState = newState;
 
+    // Always update the matcher's context with the new state
     this._matcher.context = new Context(newState);
+    
+    // If we're using ONLY .otherwise() (no .when() or other patterns) and have a rendered element,
+    // execute the template handler directly and patch from this Farinel element
+    // This avoids recreating the matcher which loses the DOM context
+    if (this._templateHandler && this._hasOnlyOtherwise && this._renderedElement) {
+      const newElement = await this._templateHandler();
+      await newElement.render();
+      await this.patch(newElement);
+      this._renderedElement = newElement;
+      this._inform(this.html);
+      return;
+    }
 
     await this.render();
 
@@ -68,6 +89,8 @@ export class Farinel extends Element {
   async render() {
     await super.render();
 
+    // Use the matcher to get the element
+    // The matcher will use the updated context and execute the handler
     const element = await this._matcher;
 
     await element.render();
@@ -75,7 +98,16 @@ export class Farinel extends Element {
     if (element instanceof Farinel) {
       this.replace(element);
     } else {
-      await this.patch(element);
+      // Patch from the previously rendered element if it exists (reactive rendering)
+      // Otherwise patch from self (first render)
+      if (this._renderedElement) {
+        await this._renderedElement.patch(element);
+      } else {
+        await this.patch(element);
+      }
+      
+      // Save the current rendered element for next patch
+      this._renderedElement = element;
     }
 
     // Signal that the first render is complete (resolves any waiting dispatches)
@@ -99,7 +131,12 @@ export class Farinel extends Element {
   stating(getState: (state: any) => {}) {
     this._stating = getState;
 
-    this.extracting(async () => await this._stating(this._matcher.context.value));
+    this.extracting(async () => {
+      const state = await this._stating(this._matcher.context.value);
+      // Save the initial state
+      this._currentState = state;
+      return state;
+    });
 
     return this;
   }
@@ -117,18 +154,21 @@ export class Farinel extends Element {
   }
 
   with(value: any, handler: () => Promise<any> | any) {
+    this._hasOnlyOtherwise = false; // Mark that we're using pattern matching
     this._matcher.with(value, handler);
 
     return this;
   }
 
   withType<U>(value: new (...args: any[]) => U, handler: () => Promise<any> | any) {
+    this._hasOnlyOtherwise = false; // Mark that we're using pattern matching
     this._matcher.withType(value, handler);
 
     return this;
   }
 
   when(matcher: (value: any) => Promise<boolean> | boolean, handler: () => Promise<any> | any) {
+    this._hasOnlyOtherwise = false; // Mark that we're using pattern matching
     this._matcher.when(matcher, handler);
 
     return this;
@@ -159,6 +199,8 @@ export class Farinel extends Element {
   }
 
   otherwise(handler: () => Promise<any> | any) {
+    // Save the template handler for reactive re-rendering
+    this._templateHandler = handler;
     this._matcher.otherwise(handler);
 
     return this;

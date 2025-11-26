@@ -40,25 +40,36 @@ export class PatchTree extends Patch {
       await this.attributesPatch.applyTo(element, parent);
     }
 
-    // Gestire children solo se element li ha
+    // Handle children if element has them
     if (element && element.children && Array.isArray(element.children)) {
-      const maxIndex = Math.min(this.childrenPatches.length, element.children.length);
-      
-      // Applicare patch agli elementi esistenti
-      for (let i = 0; i < maxIndex; i++) {
+      // Apply patches to existing children
+      // Use the full length of childrenPatches to handle additions/removals
+      for (let i = 0; i < this.childrenPatches.length; i++) {
         const patch = this.childrenPatches[i];
-        const child = element.children[i];
-        await patch.applyTo(child, element);
-      }
-      
-      // Gestire patch extra (elementi aggiunti che non hanno ancora corrispondenza)
-      for (let i = maxIndex; i < this.childrenPatches.length; i++) {
-        const patch = this.childrenPatches[i];
-        await patch.applyTo(undefined, element);
+        const child = i < element.children.length ? element.children[i] : undefined;
+        
+        // If child is null/undefined but we have a DOM node at this position (comment placeholder),
+        // we need to create a temporary Element wrapper for patching
+        if ((child === null || child === undefined) && element._childNodes && element._childNodes[i]) {
+          // Create a temporary Element that wraps the DOM node
+          const tempElement: any = {
+            html: element._childNodes[i],
+            children: [],
+            tag: element._childNodes[i].nodeType === Node.COMMENT_NODE ? 'placeholder' : 'text',
+            attributes: {}
+          };
+          await patch.applyTo(tempElement, element);
+          // Update _childNodes with the potentially new node
+          if (tempElement.html !== element._childNodes[i]) {
+            element._childNodes[i] = tempElement.html;
+          }
+        } else {
+          await patch.applyTo(child, element);
+        }
       }
     } else if (this.childrenPatches.length > 0 && parent) {
-      // Se element non ha children ma ci sono patch, potrebbero essere append
-      // In questo caso, applichiamo i patch passando parent
+      // If element doesn't have children but there are patches, they might be appends
+      // In this case, apply patches passing parent
       for (const patch of this.childrenPatches) {
         await patch.applyTo(undefined, parent);
       }
