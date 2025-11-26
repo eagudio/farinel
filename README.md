@@ -452,20 +452,6 @@ MIT
 - Update input state directly to preserve focus during typing
 - Use `key` attributes for conditional/dynamic elements
 
-### v2.4.0
-
-**Reactivity Improvements:**
-
-- Fixed `.otherwise()` reactivity with state changes
-- Direct template execution in `dispatch()` for better performance
-
-### v2.3.0
-
-**Conditional Rendering:**
-
-- Enhanced handling of `null`/`undefined` children
-- Improved element replacement logic for comment nodes
-
 ### v2.2.0
 
 **Key-Based Diffing:**
