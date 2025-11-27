@@ -4,17 +4,18 @@ Farinel is a lightweight and reactive UI framework for creating user interfaces 
 
 ## Features
 
-- 🎯 Reactive state management with Ciaplu integration
+- 🎯 **Fully Reactive Pattern Matching** - `.when()`, `.with()`, `.withType()` are all reactive (v2.5.0+)
 - 🎨 Native HTML components with TypeScript support
-- 🔄 Automatic DOM updates
+- 🔄 Automatic DOM updates and efficient diffing
 - 🎭 Simplified event handling
 - 📦 Zero external dependencies
-- 🎨 Conditional rendering with `.when()`
+- 🎨 Declarative state-based views
 - 🔄 State transformations with `.extracting()`
 - 🧪 State testing with `.test()`
-- 🎯 Multiple state handlers with `.with()`
-- 🔍 Pattern matching with Ciaplu's matchers
+- 🎯 Pattern matching with Ciaplu's matchers
+- 🔍 Key-based diffing for optimal performance
 - 🎭 Type-safe component creation
+- ⚡ Input focus preservation during updates
 
 ## Installation
 
@@ -432,6 +433,55 @@ state.step === 2 ? Div({ key: 'step-2' },
 MIT
 
 ## Changelog
+
+### v2.5.0 (2025-11-27) - Reactive Pattern Matching 🚀
+
+**Major Feature:**
+
+- **Fully Reactive `.when()`, `.with()`, `.withType()`**: All Ciaplu pattern matching methods are now reactive! When you call `dispatch()`, Farinel re-evaluates all patterns and automatically switches the rendered view based on the new state.
+
+**What This Means:**
+
+Before v2.5.0, only `.otherwise()` was reactive. Now you can use declarative pattern matching for state-based views:
+
+```typescript
+const app = farinel()
+  .stating(() => ({ status: 'loading' }))
+  .when(state => state.status === 'loading', () => 
+    Div({}, 'Loading...')
+  )
+  .when(state => state.status === 'success', () => 
+    Div({}, 'Success!')
+  )
+  .when(state => state.status === 'error', () => 
+    Div({}, 'Error!')
+  )
+  .otherwise(() => Div({}, 'Unknown'));
+
+// This now works reactively!
+await app.dispatch({ status: 'success' }); // UI updates to "Success!"
+await app.dispatch({ status: 'error' });   // UI updates to "Error!"
+```
+
+**Technical Details:**
+
+- Patterns are evaluated in the order they were defined
+- First matching pattern wins
+- Falls through to `.otherwise()` if no pattern matches
+- Supports async predicates
+- Maintains full backwards compatibility
+
+**Test Coverage:**
+
+- 8 comprehensive tests covering all pattern types
+- Tests for rapid state changes, event handlers, mixed patterns
+- All 61 existing tests continue to pass
+
+**Breaking Changes:**
+
+- None - fully backward compatible with v2.3.x
+
+---
 
 ### v2.3.0 (2025-11-26)
 

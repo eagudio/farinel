@@ -2,6 +2,11 @@ import { Context } from "ciaplu";
 import { FarinelMatcher } from "./farinelmatcher";
 import { Element } from "./virtualdom/element";
 
+type Pattern = 
+  | { type: 'when'; predicate: (value: any) => Promise<boolean> | boolean; handler: () => Promise<any> | any }
+  | { type: 'with'; value: any; handler: () => Promise<any> | any }
+  | { type: 'withType'; typeConstructor: new (...args: any[]) => any; handler: () => Promise<any> | any };
+
 export class Farinel extends Element {
   private _stating: (state: any) => any;
   private _matcher: FarinelMatcher;
@@ -12,6 +17,7 @@ export class Farinel extends Element {
   private _currentState: any = {};
   private _hasOnlyOtherwise: boolean = true; // Track if we're using only .otherwise()
   private _renderedElement: Element | null = null; // Track the last rendered element for patching
+  private _patterns: Pattern[] = []; // Store all patterns (.when, .with, .withType) in order for reactive re-evaluation
 
   constructor() {
     super('div', {});
@@ -81,6 +87,57 @@ export class Farinel extends Element {
       return;
     }
 
+    // REACTIVE PATTERN MATCHING
+    // If we have patterns and a rendered element, evaluate them reactively
+    if (!this._hasOnlyOtherwise && this._patterns.length > 0 && this._renderedElement) {
+      // Evaluate all patterns in order
+      for (const pattern of this._patterns) {
+        let matches = false;
+        
+        switch (pattern.type) {
+          case 'when':
+            matches = await pattern.predicate(newState);
+            break;
+          case 'with':
+            // Check if values match (using === for primitives, or deep equality could be added)
+            matches = newState === pattern.value || 
+                     (typeof pattern.value === 'function' && await pattern.value(newState));
+            break;
+          case 'withType':
+            // Check if newState is an instance of the type
+            matches = newState instanceof pattern.typeConstructor;
+            break;
+        }
+        
+        if (matches) {
+          // Execute the handler for the first matching pattern
+          const newElement = await pattern.handler();
+          await newElement.render();
+          // Patch from this Farinel root (which is mounted in DOM) to the new element
+          await this.patch(newElement);
+          // Update the reference for next time
+          this._renderedElement = newElement;
+          this._inform(this.html);
+          return;
+        }
+      }
+      
+      // If no pattern matched, fall through to .otherwise() if it exists
+      if (this._templateHandler) {
+        const newElement = await this._templateHandler();
+        await newElement.render();
+        // Patch from the previously rendered element if it exists, otherwise patch from this
+        if (this._renderedElement) {
+          await this._renderedElement.patch(newElement);
+        } else {
+          await this.patch(newElement);
+        }
+        this._renderedElement = newElement;
+        this._inform(this.html);
+        return;
+      }
+    }
+
     await this.render();
 
     this._inform(this.html);
@@ -97,6 +154,8 @@ export class Farinel extends Element {
     
     if (element instanceof Farinel) {
       this.replace(element);
+      // Save the element even if it's a Farinel instance
+      this._renderedElement = element;
     } else {
       // Patch from the previously rendered element if it exists (reactive rendering)
       // Otherwise patch from self (first render)
@@ -155,6 +214,14 @@ export class Farinel extends Element {
 
   with(value: any, handler: () => Promise<any> | any) {
     this._hasOnlyOtherwise = false; // Mark that we're using pattern matching
+    
+    // Store the pattern for reactive re-evaluation
+    this._patterns.push({
+      type: 'with',
+      value: value,
+      handler: handler
+    });
+    
     this._matcher.with(value, handler);
 
     return this;
@@ -162,6 +229,14 @@ export class Farinel extends Element {
 
   withType<U>(value: new (...args: any[]) => U, handler: () => Promise<any> | any) {
     this._hasOnlyOtherwise = false; // Mark that we're using pattern matching
+    
+    // Store the pattern for reactive re-evaluation
+    this._patterns.push({
+      type: 'withType',
+      typeConstructor: value,
+      handler: handler
+    });
+    
     this._matcher.withType(value, handler);
 
     return this;
@@ -169,6 +244,14 @@ export class Farinel extends Element {
 
   when(matcher: (value: any) => Promise<boolean> | boolean, handler: () => Promise<any> | any) {
     this._hasOnlyOtherwise = false; // Mark that we're using pattern matching
+    
+    // Store the pattern for reactive re-evaluation
+    this._patterns.push({
+      type: 'when',
+      predicate: matcher,
+      handler: handler
+    });
+    
     this._matcher.when(matcher, handler);
 
     return this;
