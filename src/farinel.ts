@@ -62,10 +62,8 @@ export class Farinel extends Element {
       // Note: Promise is set to null in render() after first render completes
     }
     
-    // Only check returnValue if we haven't rendered yet (for pattern matching cases)
-    if (!this._renderedElement && !this._matcher.context.returnValue) {
-      throw new Error("Element not found");
-    }
+    // After waiting for first render, we're good to proceed
+    // The reactive pattern matching or .otherwise() will handle the dispatch
     
     this._stating = async(state: any) => Promise.resolve(newState);
     
@@ -126,12 +124,8 @@ export class Farinel extends Element {
       if (this._templateHandler) {
         const newElement = await this._templateHandler();
         await newElement.render();
-        // Patch from the previously rendered element if it exists, otherwise patch from this
-        if (this._renderedElement) {
-          await this._renderedElement.patch(newElement);
-        } else {
-          await this.patch(newElement);
-        }
+        // Patch from this Farinel root (same as when patterns match)
+        await this.patch(newElement);
         this._renderedElement = newElement;
         this._inform(this.html);
         return;
