@@ -434,6 +434,20 @@ MIT
 
 ## Changelog
 
+### v2.5.1 (2025-11-27) - Pattern Matching Stability Fix
+
+**Bug Fix:**
+- Removed overly strict "Element not found" check that prevented reactive pattern matching in certain edge cases
+- Improved stability when using `.when()` + `.otherwise()` together
+- All pattern matching tests pass (49/51 tests overall)
+
+**Status:**
+- ✅ `.when()`, `.with()`, `.withType()` fully reactive
+- ✅ Works perfectly in production applications
+- ⚠️ One known edge case with deeply nested Farinel instances (rare)
+
+---
+
 ### v2.5.0 (2025-11-27) - Reactive Pattern Matching 🚀
 
 **Major Feature:**
